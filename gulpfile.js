@@ -1,30 +1,36 @@
 var path = require('path'),
+    util = require('util'),
     gulp = require('gulp'),
     gutil = require('gulp-util'),
     inject = require('gulp-inject'),
+    watch = require('gulp-watch'),
     concat = require('gulp-concat'),
     bower = require('gulp-bower'),
-    lazypipe = require('lazypipe'),
-    browserify = require('gulp-browserify'); 
+    browserify = require('gulp-browserify'),
+    compass = require('gulp-compass'),
     jshint = require('gulp-jshint'),
     bump = require('gulp-bump'),
-    rev = require('gulp-rev'),
-    sass = require('gulp-sass'),
-    filelog = require('gulp-filelog'),
     livereload = require('gulp-livereload'),
+    plumber = require('gulp-plumber'),
+    clean = require('gulp-clean'),
+    serve = require('gulp-serve'),
+    gulpif = require('gulp-if'),
+    uglify = require('gulp-uglify'),
     package = require('./package.json');
 
-/* Configurations */
+/* Configurations. Note that most of the configuration is stored in
+the task context. These are mainly for repeating configuration items */
 var config = {
   version: package.version,
-  jsRoot: ['main-', package.version ,'.js'].join(''),
+  debug: Boolean(gutil.env.debug),
 };
 
-/* Install & update dependencies */
-gulp.task('update', function() {
+// Package management
+/* Install & update Bower dependencies */
+gulp.task('install', function() {
   // FIXME specifying the component directory broken in gulp
   // For now, use .bowerrc; No need for piping, either
-  bower('./src/components');
+  bower();
 });
 
 /* Bump version number for package.json & bower.json */
@@ -39,55 +45,94 @@ gulp.task('bump', function(){
     .pipe(gulp.dest('./'));
 });
 
+// Cleanup
+gulp.task('clean', function() {
+  gulp.src('dist', { read: false })
+    .pipe(clean());
+});
+
+/* Serve the web site */
+gulp.task('serve', serve({
+  root: 'dist',
+  port: 8080
+}));
+
 gulp.task('javascript', function() {
-  return gulp.src('src/app/**/*.js')
+  // The non-MD5fied prefix, so that we know which version we are actually
+  // referring to in case of fixing bugs
+  var bundleName = util.format('bundle-%s.js', config.version),
+      componentsPath = 'src/components',
+      browserifyConfig = {
+        debug: config.debug,
+        shim: {
+          jquery: {
+            path: path.join(componentsPath, 'jquery/dist/jquery.js'),
+            exports: 'jQuery'
+          }
+        }
+      };
+
+  return gulp.src('src/app/main.js', { read: false })
     // Compile
     // Unit test
-    // Link & package
-    .pipe(browserify())
-    .pipe(concat('bundle.js'))
-    .pipe(rev())
-    // Integrate
+    // Integrate (link, package, concatenate)
+    .pipe(plumber())
+    .pipe(browserify(browserifyConfig))
+    .pipe(concat(bundleName))
+    .pipe(gulpif(config.debug, uglify()))
     // Integration test
     .pipe(gulp.dest('dist'));
 });
 
 gulp.task('stylesheets', function() {
-  return gulp.src('src/css/**/*.scss')
+  // The non-MD5fied prefix, so that we know which version we are actually
+  // referring to in case of fixing bugs
+  var bundleName = util.format('styles-%s.css', config.version);
+  
+  return gulp.src('src/css/styles.scss')
+    .pipe(plumber())
     // Compile
+    .pipe(compass({
+        project: path.join(__dirname, 'src'),
+        sass: 'css',
+        css: '../temp/css'
+    }))
     // Unit test
-    .pipe(sass())
-    .pipe(rev())
+    // Integrate (link, package, concatenate)
+    .pipe(concat(bundleName))
     // Integrate
     .pipe(gulp.dest('dist/css'));
     // Integration test
 });
 
-gulp.task('integrate', ['javascript', 'stylesheets'],  function() {
-  return gulp.src(['dist/*.js', 'dist/css/*.css'])
-      .pipe(inject('src/index.html'))
-      .pipe(gulp.dest('./dist'));
+gulp.task('assets', function() {
+  return gulp.src('src/assets/**')
+    .pipe(gulp.dest('dist/assets'));
+    // Integration test
 });
 
-gulp.task('rebuild', ['html', 'javascript', 'stylesheets'], function() {
+gulp.task('clean', function() {
+  gulp.src(['dist', 'temp'], { read: false })
+    .pipe(clean());
+});
+
+gulp.task('integrate', ['javascript', 'stylesheets', 'assets'],  function() {
   return gulp.src(['dist/*.js', 'dist/css/*.css'])
-    .pipe(inject('src/index.html'))
+    .pipe(inject('src/index.html', { ignorePath: ['/dist/'], addRootSlash: false }))
     .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('watch', function() {
+gulp.task('watch', ['integrate'], function() {
   var server = livereload();
   
   // Watch the actual resources; Currently trigger a full rebuild
-  gulp.watch('src/css/**/*.scss', ['stylesheets']);
-  gulp.watch('src/app/**/*.js', ['javascript']);
-  gulp.watch('src/*.html', ['html']);
+  gulp.watch(['src/css/**/*.scss', 'src/app/**/*.js', 'src/app/**/*.hbs', 'src/*.html'], ['integrate']);
   
   // Only livereload if the HTML (or other static assets) are changed, because
   // the HTML will change for any JS or CSS change
-  gulp.watch('dist/*', function(evt) {
-    livereload().changed(evt.path);
-  });
+  gulp.src('dist/**', { read: false })
+    .pipe(watch())
+    .pipe(livereload());
 });
 
 gulp.task('default', ['integrate']);

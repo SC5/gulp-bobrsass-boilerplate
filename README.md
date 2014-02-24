@@ -1,31 +1,42 @@
 # Gulp BoBrSASS Boilerplate
 [![Build Status](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)
 
-This is an intermediary version that is very much work in progress. We will update it constantly.
-
-Gulp BoBrSASS Boilerplate is an evolutionary step from our earlier [Grunt BoReLESS Boilerplate](https://github.com/SC5/grunt-boreless-boilerplate?source=cc). It aims to cover the same needs, but at the same time remove some of the annoyances we have encountered:
+Gulp BoBrSASS Boilerplate is an evolutionary step from our earlier
+[Grunt BoReLESS Boilerplate](https://github.com/SC5/grunt-boreless-boilerplate?source=cc).
+It aims to cover the same needs, but at the same time remove some of the annoyances we have
+encountered:
 * Faster builds
-* Runs in background (watching changes) by default
+* Runs in background (watching changes), supports live reload
+* Supports source maps for both JavaScript and SASS
 * Scriptless, NPM driven deployments (to ease e.g. AWS OpsWorks & Windows deployments)
 * Browserify (or in future something else) for better web app packaging
 
-Rather than being fashinably opinionated, for some less significant things a democratic process would work better (no matter how good or bad the opinions were). Therefore, the majority votes have been casted as follows:
+Rather than being fashinably opinionated, for some less significant things a democratic process
+works better (no matter how good or bad the opinions were). Therefore, the majority votes have
+been cast as follows:
 * Spaces instead of tabs
-* SASS instead of LESS
+* SASS & Compass instead of LESS
 * Jasmine instead of Karma
-
-The interfaces for triggering the build remain pretty much the same as for BoReLESS - just substitute 'grunt' with 'gulp'.
 
 ## Installation
 
-If you don't already have node.js 0.8.x or later, fetch it from
+If you don't already have node.js 0.10.x or later, fetch it from
 [nodejs.org](http://www.nodejs.org/). In addition we need a few dependencies
 you may have.
 
     > npm install -g gulp
+    
+In addition, you will need [Ruby](https://www.ruby-lang.org/en/downloads/) to use
+Compass framework for compiling SASS stylesheets into CSS and sprite sheets:
 
-Installing the project itself is easy. Both build system dependencies and app
-dependencies are triggered by
+    > gem update --system
+    > gem install sass
+    > gem install compass
+
+Note that you may need to first uninstall other SASS versions than (3.2.x).
+
+Installing the project itself is easy. Both build system dependencies and app dependencies are
+triggered by
 
     > npm install
 
@@ -33,42 +44,41 @@ It actually performs a release build, too (to verify that everything is ok).
 
 ## Building
 
-To trigger **debug** build
+The current build compiles JS and CSS monoliths for both the debug and release builds. The big
+difference is that the debug build supports source maps and is not minified.
 
-    > grunt debug
+To first cleanup your distribution directory and trigger **release** build
 
-To trigger **debug** build and watch for changes
+    > gulp clean
+    > gulp
 
-    > grunt debug watch
+To trigger **debug** build, run gulp with a debug flag
 
-To trigger **release** build
+    > gulp --debug
+    
+To keep gulp running and watch for changes, use e.g.
 
-    > grunt release
+    > gulp watch --debug
+
+To update your package version, you eventually want to do one of the following:
+
+    > gulp bump --patch
+    > gulp bump --minor
+    > gulp bump --major
+    > gulp bump # defaults to minor
 
 ## Running the Service
 
-Most likely the normal *grunt server* will fail (yet there is no big reason
-why it should). The system comes with bundled *node/express* stack, because
-that is likely you would use for development use, anyway. Start the server in
-**debug** mode by
+Most likely the normal *gulp serve* task will not suffice, and you want to run your own test
+server, instead. The task below, will default to 'gulp serve' by default until you change it:
 
     > npm start
 
-Note that if you have run *grunt debug* in another window, it should be
-rebuilding your changed pages in the background.
+### Live reloading the changes
 
-To test the service in **release** mode, use
-
-    > grunt release
-    > NODE_ENV=production node server/server.js
-
-You most likely want to re-run the tests and reload the files automatically.
-Start the debug server elsewhere, then run
-
-    > grunt monitor
-
-And the build will start to watch the changes in your project, triggering
-reload when needed.
+Live reloading is enabled when running *gulp watch* in another window. Just change any of your
+JavaScript or SASS files to trigger reload. The reload monitors 'dist' directory and pushes the
+changes as needed.
 
 ##  Extending & Hacking
 
@@ -86,53 +96,53 @@ reload when needed.
 
 ####  Build System
 
-    grunt.js            The Grunt build configuration
+    gulpfile.js         The Gulp build configuration
     components.json     The Bower components
     .bowerrc            The Bower directory overrides
     package.json        The build level dependencies
 
 ### Build Results
 
-    dist/               Minified & optimised version
+    dist/               The build results (debug and release builds)
 
-## Using BoReLESS as an Upstream
+## Using BoBrSASS as an Upstream
 
-Upgrading the boilerplate in your project may be tedious work. Once BoReLESS
+Upgrading the boilerplate in your project may be tedious work. Once BoBrSASS
 directory structure becomes stable (it might be already, but no guarantees!),
-you can use it directly as an upstream (here with a name 'boreless').
+you can use it directly as an upstream (here with a name 'bobrsass').
 
-    > git remote add -f boreless git@github.com:SC5/grunt-boreless-boilerplate.git
+    > git remote add -f bobrsass git@github.com:SC5/gulp-bobrsass-boilerplate.git
 
-Now synchronizing with BoReLESS becomes easier:
+Now synchronizing with BoBrSASS becomes easier:
 
-    > git pull boreless master
+    > git pull bobrsass master
 
-It is possible to use BoReLESS as a subtree, too:
+It is possible to use BoBrSASS as a subtree, too:
 
-    > git subtree add --prefix client --squash git@github.com:SC5/grunt-boreless-boilerplate.git master --squash
-    > git remote add -f boreless git@github.com:SC5/grunt-boreless-boilerplate.git
-    > git fetch boreless master
+    > git subtree add --prefix client --squash git@github.com:SC5/gulp-bobrsass-boilerplate.git master --squash
+    > git remote add -f bobrsass git@github.com:SC5/gulp-bobrsass-boilerplate.git
+    > git fetch bobrsass master
 
-The example pulls BoReLESS master branch into 'client' subdirectory. The key here is to use
+Note that you need to use a recent version of git that supports subtrees.
+
+The example pulls BoBrSASS master branch into 'client' subdirectory. The key here is to use
 '--prefix client' to keep the boilerplate in its own subdirectory. Later on, sync by:
 
-    > git subtree pull --prefix client boreless master
-
+    > git subtree pull --prefix client bobrsass master
 
 ## TODO
 
-* Use some sensible app boilerplate (or fetch it from another project)
-* Add Cordova builds (or put it its own branch or an example)
-* Add templating language compilation into JS RequireJS modules
-* Add some examples & documentation
+* SASS source maps
+* Test automation (Jasmine & Protractor)
+* Code style verifier using JSHint & some CSS linter
+* Add more examples & documentation
 
 ## Release History
 
-* 2013/01/16 - v0.1.0 - Initial release
-* 2013/03/10 - v0.2.0 - Update to Grunt 0.4.0
-* 2013/10/12 - v0.3.0 - Add Karma based test automation
+* 2014/02/12 - v0.1.0 - Initial commit (partially working stub)
+* 2014/02/24 - v0.1.1 - Fix the build errors, update README
 
 ## License
 
-Copyright (c) 2013 [SC5](http://sc5.io/), licensed for users and contributors under MIT license.
-https://github.com/sc5/grunt-boreless-boilerplate/blob/master/LICENSE-MIT
+Copyright (c) 2014 [SC5](http://sc5.io/), licensed for users and contributors under MIT license.
+https://github.com/sc5/grunt-bobrsass-boilerplate/blob/master/LICENSE-MIT

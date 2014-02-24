@@ -1,6 +1,5 @@
 temp
-staging
 dist
 node_modules
-server/node_modules
 src/components
+src/.sass-cache
