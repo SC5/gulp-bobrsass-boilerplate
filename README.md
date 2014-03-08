@@ -146,3 +146,7 @@ The example pulls BoBrSASS master branch into 'client' subdirectory. The key her
 
 Copyright (c) 2014 [SC5](http://sc5.io/), licensed for users and contributors under MIT license.
 https://github.com/sc5/grunt-bobrsass-boilerplate/blob/master/LICENSE-MIT
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/SC5/gulp-bobrsass-boilerplate/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
