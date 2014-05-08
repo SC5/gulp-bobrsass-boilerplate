@@ -97,7 +97,7 @@ changes as needed.
 ####  Build System
 
     gulpfile.js         The Gulp build configuration
-    components.json     The Bower components
+    bower.json          The Bower components
     .bowerrc            The Bower directory overrides
     package.json        The build level dependencies
 
@@ -134,13 +134,13 @@ The example pulls BoBrSASS master branch into 'client' subdirectory. The key her
 
 * SASS source maps
 * Test automation (Jasmine & Protractor)
-* Code style verifier using JSHint & some CSS linter
 * Add more examples & documentation
 
 ## Release History
 
 * 2014/02/12 - v0.1.0 - Initial commit (partially working stub)
 * 2014/02/24 - v0.1.1 - Fix the build errors, update README
+* 2014/05/08 - v0.2.0 - Update dependecies, add linting and plugin loader, update README
 
 ## License
 
