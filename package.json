@@ -1,6 +1,6 @@
 {
   "name": "gulp-bobrsass-boilerplate",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "engines": {
     "node": ">=0.10.10",
     "npm": ">=1.2.15"
@@ -22,15 +22,21 @@
     "gulp-livereload": "^1.5.0",
     "gulp-load-plugins": "^0.5.0",
     "gulp-plumber": "^0.6.1",
+    "gulp-protractor": "0.0.7",
     "gulp-serve": "^0.2.0",
     "gulp-uglify": "^0.2.1",
     "gulp-util": "^2.2.14",
-    "gulp-watch": "^0.6.4"
+    "gulp-watch": "^0.6.4",
+    "phantomjs-server": "^1.9.2-1",
+    "protractor": "^0.22.0",
+    "selenium-webdriver": "^2.41.0"
   },
   "scripts": {
     "install": "gulp install",
     "build": "gulp",
+    "pretest": "node start-phantomjs.js",
     "test": "gulp test",
+    "posttest": "killall phantomjs",
     "start": "gulp serve"
   }
 }

@@ -139,4 +139,19 @@ gulp.task('csslint', function() {
     .pipe($.csslint.reporter());
 });
 
+
+// Downloads the selenium webdriver
+gulp.task('webdriver_update', $.protractor.webdriver_update);
+
+gulp.task('test', function() {
+
+  gulp.src(['tests/*.js'])
+    .pipe($.protractor.protractor({
+      configFile: 'protractor.config.js',
+      args: ['--baseUrl', 'http://localhost:8080']
+    }))    
+    .on('error', function(e) { throw e; })
+
+});
+
 gulp.task('default', ['integrate']);
