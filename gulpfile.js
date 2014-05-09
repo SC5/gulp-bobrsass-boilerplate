@@ -108,7 +108,7 @@ gulp.task('integrate', ['javascript', 'stylesheets', 'assets'], function() {
     .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('watch', ['integrate'], function() {
+gulp.task('watch', ['integrate', 'test'], function() {
   var server = $.livereload();
   
   // Watch the actual resources; Currently trigger a full rebuild
@@ -139,19 +139,46 @@ gulp.task('csslint', function() {
     .pipe($.csslint.reporter());
 });
 
-
 // Downloads the selenium webdriver
 gulp.task('webdriver_update', $.protractor.webdriver_update);
 
-gulp.task('test', function() {
+gulp.task('webdriver', function(cb) {
 
-  gulp.src(['tests/*.js'])
-    .pipe($.protractor.protractor({
-      configFile: 'protractor.config.js',
-      args: ['--baseUrl', 'http://localhost:8080']
-    }))    
-    .on('error', function(e) { throw e; })
+  if (config.debug) {
+    cb();
+  } else {
+
+    var phantom = require('phantomjs-server'),
+        webdriver = require('selenium-webdriver');
+ 
+    // Start PhantomJS
+    phantom.start().done(function() {
+      var driver = new webdriver.Builder()
+        .usingServer(phantom.address())
+        .build();
+      cb();
+    });
+
+  }
 
 });
 
-gulp.task('default', ['integrate']);
+gulp.task('test', ['webdriver'], function() {
+
+  if (config.debug) {
+    var args = ['--seleniumServerJar', 'node_modules/protractor/selenium/selenium-server-standalone-2.41.0.jar'];
+  } else {
+    var args = ['--seleniumAddress', 'http://localhost:4444/'];
+  }
+
+  // Run tests
+  gulp.src(['tests/*.js'])
+    .pipe($.protractor.protractor({
+      configFile: 'protractor.config.js',
+      args: args
+    }))    
+    .on('error', function(e) { throw e; });
+
+});
+
+gulp.task('default', ['integrate', 'test']);

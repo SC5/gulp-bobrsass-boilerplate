@@ -34,9 +34,7 @@
   "scripts": {
     "install": "gulp install",
     "build": "gulp",
-    "pretest": "node start-phantomjs.js",
     "test": "gulp test",
-    "posttest": "killall phantomjs",
     "start": "gulp serve"
   }
 }

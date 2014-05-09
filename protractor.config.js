@@ -1,8 +1,8 @@
 // An example configuration file.
 exports.config = {
 
-  // The file path to the selenium server jar ()
-  seleniumServerJar: './node_modules/protractor/selenium/selenium-server-standalone-2.41.0.jar',
+  // Base url for relative urls
+  baseUrl: 'http://localhost:8080/',
 
   // Capabilities to be passed to the webdriver instance.
   capabilities: {
@@ -14,4 +14,5 @@ exports.config = {
     showColors: true,
     defaultTimeoutInterval: 30000
   }
+  
 };
