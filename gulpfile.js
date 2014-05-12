@@ -17,11 +17,13 @@ gulp.task('install', function() {
   // FIXME specifying the component directory broken in gulp
   // For now, use .bowerrc; No need for piping, either
   $.bower();
+  // Downloads the Selenium webdriver
+  $.protractor.webdriver_update(function() {});
 });
 
 /* Bump version number for package.json & bower.json */
 // TODO Provide means for appending a patch id based on git commit id or md5 hash
-gulp.task('bump', function(){
+gulp.task('bump', function() {
   // Fetch whether we're bumping major, minor or patch; default to minor
   var env = $.util.env,
       type = (env.major) ? 'major' : (env.patch) ? 'patch' : 'minor';
@@ -139,9 +141,6 @@ gulp.task('csslint', function() {
     .pipe($.csslint.reporter());
 });
 
-// Downloads the selenium webdriver
-gulp.task('webdriver_update', $.protractor.webdriver_update);
-
 gulp.task('webdriver', function(cb) {
 
   if (config.debug) {
@@ -166,7 +165,11 @@ gulp.task('webdriver', function(cb) {
 gulp.task('test', ['webdriver'], function() {
 
   if (config.debug) {
-    var args = ['--seleniumServerJar', 'node_modules/protractor/selenium/selenium-server-standalone-2.41.0.jar'];
+    // Find the selenium server standalone jar file, version number in the filename
+    // is due to change
+    var find = require('find'),
+        paths = find.fileSync(/selenium-server-standalone.*\.jar/, 'node_modules/protractor/selenium'),
+        args = ['--seleniumServerJar', paths[0]];
   } else {
     var args = ['--seleniumAddress', 'http://localhost:4444/'];
   }

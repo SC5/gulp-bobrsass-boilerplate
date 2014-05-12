@@ -132,11 +132,7 @@ The example pulls BoBrSASS master branch into 'client' subdirectory. The key her
 
 ## Testing
 
-To fetch and update Selenium server standalone:
-
-    > gulp webdriver_update
-
-Make sure that the jar file's version matches the one in gulpfile.js. Run tests with PhantomJS:
+Run tests with PhantomJS:
 
     > gulp test
 
