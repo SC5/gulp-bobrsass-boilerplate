@@ -11,7 +11,7 @@ encountered:
 * Scriptless, NPM driven deployments (to ease e.g. AWS OpsWorks & Windows deployments)
 * Browserify (or in future something else) for better web app packaging
 
-Rather than being fashinably opinionated, for some less significant things a democratic process
+Rather than being fashionably opinionated, for some less significant things a democratic process
 works better (no matter how good or bad the opinions were). Therefore, the majority votes have
 been cast as follows:
 * Spaces instead of tabs
@@ -97,7 +97,7 @@ changes as needed.
 ####  Build System
 
     gulpfile.js         The Gulp build configuration
-    components.json     The Bower components
+    bower.json          The Bower components
     .bowerrc            The Bower directory overrides
     package.json        The build level dependencies
 
@@ -130,17 +130,28 @@ The example pulls BoBrSASS master branch into 'client' subdirectory. The key her
 
     > git subtree pull --prefix client bobrsass master
 
+## Testing
+
+Run tests with PhantomJS:
+
+    > gulp test
+
+Or in debug mode with chromedriver in a browser:
+
+    > gulp test --debug
+
 ## TODO
 
 * SASS source maps
-* Test automation (Jasmine & Protractor)
-* Code style verifier using JSHint & some CSS linter
 * Add more examples & documentation
 
 ## Release History
 
 * 2014/02/12 - v0.1.0 - Initial commit (partially working stub)
 * 2014/02/24 - v0.1.1 - Fix the build errors, update README
+* 2014/05/08 - v0.2.0 - Update dependecies, add linting and plugin loader, update README
+* 2014/05/09 - v0.3.0 - Add Protractor test framework, update README
+* 2014/05/14 - v0.3.1 - Better linting
 
 ## License
 
