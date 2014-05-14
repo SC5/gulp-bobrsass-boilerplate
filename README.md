@@ -151,6 +151,7 @@ Or in debug mode with chromedriver in a browser:
 * 2014/02/24 - v0.1.1 - Fix the build errors, update README
 * 2014/05/08 - v0.2.0 - Update dependecies, add linting and plugin loader, update README
 * 2014/05/09 - v0.3.0 - Add Protractor test framework, update README
+* 2014/05/14 - v0.3.1 - Better linting
 
 ## License
 
