@@ -45,7 +45,14 @@ gulp.task('serve', $.serve({
   port: 8080
 }));
 
-gulp.task('javascript', ['jslint'], function() {
+gulp.task('preprocess', function() {
+  gulp.src('src/app/**/*.js')
+    .pipe($.jshint())
+    .pipe($.jshint.reporter('default'));
+});
+
+gulp.task('javascript', ['preprocess'], function() {
+
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
   var bundleName = util.format('bundle-%s.js', config.version),
@@ -72,7 +79,7 @@ gulp.task('javascript', ['jslint'], function() {
     .pipe(gulp.dest('dist'));
 });
 
-gulp.task('stylesheets', ['csslint'], function() {
+gulp.task('stylesheets', function() {
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
   var bundleName = util.format('styles-%s.css', config.version);
@@ -89,8 +96,10 @@ gulp.task('stylesheets', ['csslint'], function() {
     // Integrate (link, package, concatenate)
     .pipe($.concat(bundleName))
     // Integrate
-    .pipe(gulp.dest('dist/css'));
+    .pipe(gulp.dest('dist/css'))
     // Integration test
+    .pipe($.csslint())
+    .pipe($.csslint.reporter());
 });
 
 gulp.task('assets', function() {
@@ -116,29 +125,16 @@ gulp.task('watch', ['integrate', 'test'], function() {
   // Watch the actual resources; Currently trigger a full rebuild
   gulp.watch([
     'src/css/**/*.scss', 
-    'src/css/**/*.css',
     'src/app/**/*.js', 
     'src/app/**/*.hbs', 
     'src/*.html'
-  ], ['integrate']);
+  ], ['integrate', 'test']);
   
   // Only livereload if the HTML (or other static assets) are changed, because
   // the HTML will change for any JS or CSS change
   gulp.src('dist/**', { read: false })
     .pipe($.watch())
     .pipe($.livereload());
-});
-
-gulp.task('jslint', function() {
-  return gulp.src('src/app/**/*.js')
-    .pipe($.jshint())
-    .pipe($.jshint.reporter());
-});
-
-gulp.task('csslint', function() {
-  return gulp.src('src/css/**/*.css')
-    .pipe($.csslint())
-    .pipe($.csslint.reporter());
 });
 
 gulp.task('webdriver', function(cb) {
@@ -165,7 +161,7 @@ gulp.task('webdriver', function(cb) {
 gulp.task('test', ['webdriver'], function() {
 
   if (config.debug) {
-    // Find the selenium server standalone jar file, version number in the filename
+    // Find the selenium server standalone jar file. Version number in the file name
     // is due to change
     var find = require('find'),
         paths = find.fileSync(/selenium-server-standalone.*\.jar/, 'node_modules/protractor/selenium'),
