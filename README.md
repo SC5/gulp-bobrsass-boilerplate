@@ -16,7 +16,7 @@ works better (no matter how good or bad the opinions were). Therefore, the major
 been cast as follows:
 * Spaces instead of tabs
 * SASS & Compass instead of LESS
-* Jasmine instead of Karma
+* Protractor acceptance tests instead of Karma unit tests
 
 ## Installation
 
@@ -25,7 +25,7 @@ If you don't already have node.js 0.10.x or later, fetch it from
 you may have.
 
     > npm install -g gulp
-    
+
 In addition, you will need [Ruby](https://www.ruby-lang.org/en/downloads/) to use
 Compass framework for compiling SASS stylesheets into CSS and sprite sheets:
 
@@ -45,17 +45,19 @@ It actually performs a release build, too (to verify that everything is ok).
 ## Building
 
 The current build compiles JS and CSS monoliths for both the debug and release builds. The big
-difference is that the debug build supports source maps and is not minified.
+difference is that the debug build supports source maps and is not minified. It should be
+noted that in order to get the tests pass, a server must be running (e.g. by running 'npm start').
 
 To first cleanup your distribution directory and trigger **release** build
 
     > gulp clean
+    > npm start # in another window
     > gulp
 
 To trigger **debug** build, run gulp with a debug flag
 
     > gulp --debug
-    
+
 To keep gulp running and watch for changes, use e.g.
 
     > gulp watch --debug
@@ -160,4 +162,3 @@ https://github.com/sc5/grunt-bobrsass-boilerplate/blob/master/LICENSE-MIT
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/SC5/gulp-bobrsass-boilerplate/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
