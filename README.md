@@ -11,12 +11,12 @@ encountered:
 * Scriptless, NPM driven deployments (to ease e.g. AWS OpsWorks & Windows deployments)
 * Browserify (or in future something else) for better web app packaging
 
-Rather than being fashinably opinionated, for some less significant things a democratic process
+Rather than being fashionably opinionated, for some less significant things a democratic process
 works better (no matter how good or bad the opinions were). Therefore, the majority votes have
 been cast as follows:
 * Spaces instead of tabs
 * SASS & Compass instead of LESS
-* Jasmine instead of Karma
+* Protractor acceptance tests instead of Karma unit tests
 
 ## Installation
 
@@ -25,7 +25,7 @@ If you don't already have node.js 0.10.x or later, fetch it from
 you may have.
 
     > npm install -g gulp
-    
+
 In addition, you will need [Ruby](https://www.ruby-lang.org/en/downloads/) to use
 Compass framework for compiling SASS stylesheets into CSS and sprite sheets:
 
@@ -45,17 +45,19 @@ It actually performs a release build, too (to verify that everything is ok).
 ## Building
 
 The current build compiles JS and CSS monoliths for both the debug and release builds. The big
-difference is that the debug build supports source maps and is not minified.
+difference is that the debug build supports source maps and is not minified. It should be
+noted that in order to get the tests pass, a server must be running (e.g. by running 'npm start').
 
 To first cleanup your distribution directory and trigger **release** build
 
     > gulp clean
+    > npm start # in another window
     > gulp
 
 To trigger **debug** build, run gulp with a debug flag
 
     > gulp --debug
-    
+
 To keep gulp running and watch for changes, use e.g.
 
     > gulp watch --debug
@@ -97,7 +99,7 @@ changes as needed.
 ####  Build System
 
     gulpfile.js         The Gulp build configuration
-    components.json     The Bower components
+    bower.json          The Bower components
     .bowerrc            The Bower directory overrides
     package.json        The build level dependencies
 
@@ -130,17 +132,28 @@ The example pulls BoBrSASS master branch into 'client' subdirectory. The key her
 
     > git subtree pull --prefix client bobrsass master
 
+## Testing
+
+Run tests with PhantomJS:
+
+    > gulp test
+
+Or in debug mode with chromedriver in a browser:
+
+    > gulp test --debug
+
 ## TODO
 
 * SASS source maps
-* Test automation (Jasmine & Protractor)
-* Code style verifier using JSHint & some CSS linter
 * Add more examples & documentation
 
 ## Release History
 
 * 2014/02/12 - v0.1.0 - Initial commit (partially working stub)
 * 2014/02/24 - v0.1.1 - Fix the build errors, update README
+* 2014/05/08 - v0.2.0 - Update dependecies, add linting and plugin loader, update README
+* 2014/05/09 - v0.3.0 - Add Protractor test framework, update README
+* 2014/05/14 - v0.3.1 - Better linting
 
 ## License
 
@@ -149,4 +162,3 @@ https://github.com/sc5/grunt-bobrsass-boilerplate/blob/master/LICENSE-MIT
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/SC5/gulp-bobrsass-boilerplate/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
