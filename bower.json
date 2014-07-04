@@ -2,7 +2,9 @@
   "name": "gulp-bobrsass-boilerplate",
   "version": "0.3.1",
   "dependencies": {
-    "jquery": "2.1.0"
+    "angular": "~1.2.19",
+    "angular-resource": "~1.2.19",
+    "angular-route": "~1.2.19"
   },
   "devDependencies": {}
 }

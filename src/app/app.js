@@ -1,11 +1,22 @@
-var app = require('./app.js'),
-    $ = require('jquery');
+'use strict';
 
-function start() {
-  // Start the app here
-  $('#status').html('If you can read this text, your stack should be alright.');
-}
+angular.module('SC5AngularBoilerplate', [
+    'ngResource',
+    'ngRoute'
+  ])
+  .config(function($routeProvider, $locationProvider) {
+    console.log('Hello from config');
+    $routeProvider.
+      when('/', {
+          templateUrl: 'assets/views/main.html'
+      }).
+      when('/map', {
+          templateUrl: 'assets/views/sample.html',
+          controller: 'SampleController'
+      }).
+      otherwise({
+          redirectTo: '/'
+      });
 
-exports = module.exports = {
-  start: start
-};
+      $locationProvider.html5Mode(true);
+  });

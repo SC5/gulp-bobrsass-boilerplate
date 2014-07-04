@@ -1,20 +1,17 @@
 <!DOCTYPE HTML>
-<html>
+<html ng-app="SC5AngularBoilerplate">
 <head>
   <meta charset="utf-8" />
-  <title>BoBrSASS Test Page</title>
+  <title>SC5 Angular Boilerplate</title>
   <!-- inject:css -->
   <!-- endinject -->
   <!-- inject:js -->
   <!-- endinject -->
 </head>
 <body>
-  <h1>BoBrSASS Test Page</h1>
-  <div id="status">
-    <p>If you see this, something is wrong with your installation.</p>
+  <div ng-controller="MainController">
+    <a href="map">Map</a>
+    <div ng-view></div>
   </div>
-  <footer>
-    <p>Copyright 2014 SC5 Online</p>
-  </footer>
 </body>
 </html>

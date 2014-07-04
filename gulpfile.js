@@ -1,6 +1,7 @@
 var path = require('path'),
     util = require('util'),
     gulp = require('gulp'),
+    url = require('url'),
     $ = require('gulp-load-plugins')(),
     package = require('./package.json');
 
@@ -42,37 +43,43 @@ gulp.task('clean', function() {
 /* Serve the web site */
 gulp.task('serve', $.serve({
   root: 'dist',
-  port: 8080
+  port: 8080,
+  middleware: function(req, res, next) {
+    var u = url.parse(req.url);
+
+  	// Rewrite urls of form 'map', 'foo' & 'bar' to blank
+    var rule = /^\/(map|foo|bar)/;
+
+  	if (u.pathname.match(rule)) {
+  		u.pathname = u.pathname.replace(rule, '');
+  		var original = req.url;
+  		req.url = url.format(u);
+  		console.log('Rewrote', original, 'to', req.url);
+  	}
+
+    next();
+  }
 }));
 
-gulp.task('preprocess', function() {
-  gulp.src('src/app/**/*.js')
-    .pipe($.jshint())
-    .pipe($.jshint.reporter('default'));
-});
-
-gulp.task('javascript', ['preprocess'], function() {
+gulp.task('javascript', function() {
 
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
-  var bundleName = util.format('bundle-%s.js', config.version),
-      componentsPath = 'src/components',
-      browserifyConfig = {
-        debug: config.debug,
-        shim: {
-          jquery: {
-            path: path.join(componentsPath, 'jquery/dist/jquery.js'),
-            exports: 'jQuery'
-          }
-        }
-      };
+  var bundleName = util.format('20-app-%s.js', config.version);
 
-  return gulp.src('src/app/main.js', { read: false })
+  return $.bowerFiles()
+    // Compile
+    // Unit test
+    // Integrate (link, package, concatenate)
+    .pipe($.concat(bundleName))
+    // Integration test
+    .pipe(gulp.dest('dist'));
+
+  return gulp.src('src/app/**/*.js')
     // Compile
     // Unit test
     // Integrate (link, package, concatenate)
     .pipe($.plumber())
-    .pipe($.browserify(browserifyConfig))
     .pipe($.concat(bundleName))
     .pipe($.if(config.debug, $.uglify()))
     // Integration test
@@ -83,7 +90,7 @@ gulp.task('stylesheets', function() {
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
   var bundleName = util.format('styles-%s.css', config.version);
-  
+
   return gulp.src('src/css/styles.scss')
     .pipe($.plumber())
     // Compile
@@ -121,15 +128,14 @@ gulp.task('integrate', ['javascript', 'stylesheets', 'assets'], function() {
 
 gulp.task('watch', ['integrate', 'test'], function() {
   var server = $.livereload();
-  
+
   // Watch the actual resources; Currently trigger a full rebuild
   gulp.watch([
-    'src/css/**/*.scss', 
-    'src/app/**/*.js', 
-    'src/app/**/*.hbs', 
-    'src/*.html'
-  ], ['integrate', 'test']);
-  
+    'src/css/**/*.scss',
+    'src/app/**/*.js',
+    'src/assets/**/*.html'
+  ], ['integrate']);
+
   // Only livereload if the HTML (or other static assets) are changed, because
   // the HTML will change for any JS or CSS change
   gulp.src('dist/**', { read: false })
@@ -145,7 +151,7 @@ gulp.task('webdriver', function(cb) {
 
     var phantom = require('phantomjs-server'),
         webdriver = require('selenium-webdriver');
- 
+
     // Start PhantomJS
     phantom.start().done(function() {
       var driver = new webdriver.Builder()
@@ -157,6 +163,8 @@ gulp.task('webdriver', function(cb) {
   }
 
 });
+
+gulp.task('webdriver_standalone', $.protractor.webdriver_standalone);
 
 gulp.task('test', ['webdriver'], function() {
 
@@ -175,7 +183,7 @@ gulp.task('test', ['webdriver'], function() {
     .pipe($.protractor.protractor({
       configFile: 'protractor.config.js',
       args: args
-    }))    
+    }))
     .on('error', function(e) { throw e; });
 
 });
