@@ -2,14 +2,35 @@ var path = require('path'),
     util = require('util'),
     gulp = require('gulp'),
     $ = require('gulp-load-plugins')(),
+    runSequence = require('run-sequence'),
+    webdriver = require('selenium-webdriver'),
+    Promise = require('bluebird'),
+    exec = require('exec-wait'),
     package = require('./package.json');
 
 /* Configurations. Note that most of the configuration is stored in
 the task context. These are mainly for repeating configuration items */
 var config = {
-  version: package.version,
-  debug: Boolean($.util.env.debug),
-};
+    version: package.version,
+    debug: Boolean($.util.env.debug)
+  },
+  ghostDriver = exec({
+    name: 'Ghostdriver',
+    cmd: path.join(require.resolve('phantomjs'), '../phantom/bin',
+      'phantomjs' + (process.platform === 'win32' ? '.exe' : '')),
+    args: ['--webdriver=4444', '--ignore-ssl-errors=true'],
+    monitor: { stdout: 'GhostDriver - Main - running on port 4444' },
+    log: $.util.log
+  }),
+  cmdAndArgs = package.scripts.start.split(/\s/),
+  testServer = exec({
+    name: 'Test server',
+    cmd: cmdAndArgs[0],
+    args: cmdAndArgs.slice(1),
+    monitor: { url: 'http://localhost:8080/' },
+    log: $.util.log,
+    stopSignal: 'SIGTERM'
+  });
 
 // Package management
 /* Install & update Bower dependencies */
@@ -46,7 +67,7 @@ gulp.task('serve', $.serve({
 }));
 
 gulp.task('preprocess', function() {
-  gulp.src('src/app/**/*.js')
+  return gulp.src('src/app/**/*.js')
     .pipe($.jshint())
     .pipe($.jshint.reporter('default'));
 });
@@ -83,7 +104,7 @@ gulp.task('stylesheets', function() {
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
   var bundleName = util.format('styles-%s.css', config.version);
-  
+
   return gulp.src('src/css/styles.scss')
     .pipe($.plumber())
     // Compile
@@ -109,7 +130,7 @@ gulp.task('assets', function() {
 });
 
 gulp.task('clean', function() {
-  gulp.src(['dist', 'temp'], { read: false })
+  return gulp.src(['dist', 'temp'], { read: false })
     .pipe($.clean());
 });
 
@@ -119,65 +140,79 @@ gulp.task('integrate', ['javascript', 'stylesheets', 'assets'], function() {
     .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('watch', ['integrate', 'test'], function() {
+gulp.task('integrate-test', function() {
+  console.log('integrate-test');
+  return runSequence(['integrate'], 'test-run');
+});
+
+gulp.task('watch', ['integrate', 'test-setup'], function() {
   var server = $.livereload();
-  
-  // Watch the actual resources; Currently trigger a full rebuild
-  gulp.watch([
-    'src/css/**/*.scss', 
-    'src/app/**/*.js', 
-    'src/app/**/*.hbs', 
+
+  var stream = gulp.watch([
+    'src/css/**/*.scss',
+    'src/app/**/*.js',
+    'src/app/**/*.hbs',
     'src/*.html'
-  ], ['integrate', 'test']);
-  
+  ], ['integrate-test']);
+
   // Only livereload if the HTML (or other static assets) are changed, because
   // the HTML will change for any JS or CSS change
   gulp.src('dist/**', { read: false })
     .pipe($.watch())
     .pipe($.livereload());
+
+  return stream;
 });
 
-gulp.task('webdriver', function(cb) {
+gulp.task('test-setup', function(cb) {
 
-  if (config.debug) {
-    cb();
-  } else {
+  return testServer.start()
+    .then(ghostDriver.start)
+    .then(function() {
+      // Hookup to keyboard interrupts, so that we will
+      // execute teardown prior to exiting
+      process.once('SIGINT', function() {
+        return ghostDriver.stop()
+          .then(testServer.stop)
+          .then(function() {
+            process.exit();
+          })
+      });
 
-    var phantom = require('phantomjs-server'),
-        webdriver = require('selenium-webdriver');
- 
-    // Start PhantomJS
-    phantom.start().done(function() {
+      // Setup the web driver
       var driver = new webdriver.Builder()
-        .usingServer(phantom.address())
+        .usingServer('http://127.0.0.1:4444/wd/hub')
         .build();
-      cb();
+
+      return Promise.resolve();
     });
+})
 
-  }
+gulp.task('test-run', function() {
+  $.util.log('Running protractor');
 
-});
-
-gulp.task('test', ['webdriver'], function() {
-
-  if (config.debug) {
-    // Find the selenium server standalone jar file. Version number in the file name
-    // is due to change
-    var find = require('find'),
-        paths = find.fileSync(/selenium-server-standalone.*\.jar/, 'node_modules/protractor/selenium'),
-        args = ['--seleniumServerJar', paths[0]];
-  } else {
-    var args = ['--seleniumAddress', 'http://localhost:4444/'];
-  }
-
-  // Run tests
-  gulp.src(['tests/*.js'])
+  return new Promise(function(resolve, reject) {
+    gulp.src(['tests/*.js'])
+    .pipe($.plumber())
     .pipe($.protractor.protractor({
       configFile: 'protractor.config.js',
-      args: args
-    }))    
-    .on('error', function(e) { throw e; });
-
+      args: ['--seleniumAddress', 'http://localhost:4444/',
+             '--baseUrl', 'http://localhost:8080/']
+    }))
+    .on('end', function() {
+      resolve();
+    })
+    .on('error', function() {
+      resolve();
+    })
+  });
 });
 
-gulp.task('default', ['integrate', 'test']);
+gulp.task('test-teardown', function() {
+  return ghostDriver.stop()
+    .then(testServer.stop);
+})
+
+gulp.task('default', function() {
+  return runSequence(['integrate', 'test-setup'], 'test-run', 'test-teardown');
+});
