@@ -3,7 +3,6 @@ var path = require('path'),
     gulp = require('gulp'),
     $ = require('gulp-load-plugins')(),
     runSequence = require('run-sequence'),
-    webdriver = require('selenium-webdriver'),
     Promise = require('bluebird'),
     exec = require('exec-wait'),
     package = require('./package.json');
@@ -27,7 +26,7 @@ var config = {
     name: 'Test server',
     cmd: cmdAndArgs[0],
     args: cmdAndArgs.slice(1),
-    monitor: { url: 'http://localhost:8080/' },
+    monitor: { url: 'http://localhost:8080/', checkHTTPResponse: false },
     log: $.util.log,
     stopSignal: 'SIGTERM'
   });
@@ -178,12 +177,6 @@ gulp.task('test-setup', function(cb) {
             process.exit();
           })
       });
-
-      // Setup the web driver
-      var driver = new webdriver.Builder()
-        .usingServer('http://127.0.0.1:4444/wd/hub')
-        .build();
-
       return Promise.resolve();
     });
 })
@@ -196,7 +189,7 @@ gulp.task('test-run', function() {
     .pipe($.plumber())
     .pipe($.protractor.protractor({
       configFile: 'protractor.config.js',
-      args: ['--seleniumAddress', 'http://localhost:4444/',
+      args: ['--seleniumAddress', 'http://localhost:4444/wd/hub',
              '--baseUrl', 'http://localhost:8080/']
     }))
     .on('end', function() {
