@@ -3,14 +3,35 @@ var path = require('path'),
     gulp = require('gulp'),
     url = require('url'),
     $ = require('gulp-load-plugins')(),
+    runSequence = require('run-sequence'),
+    Promise = require('bluebird'),
+    exec = require('exec-wait'),
+    eventStream = require('event-stream'),
     package = require('./package.json');
 
 /* Configurations. Note that most of the configuration is stored in
 the task context. These are mainly for repeating configuration items */
 var config = {
-  version: package.version,
-  debug: Boolean($.util.env.debug),
-};
+    version: package.version,
+    debug: Boolean($.util.env.debug)
+  },
+  ghostDriver = exec({
+    name: 'Ghostdriver',
+    cmd: path.join(require.resolve('phantomjs'), '../phantom/bin',
+      'phantomjs' + (process.platform === 'win32' ? '.exe' : '')),
+    args: ['--webdriver=4444', '--ignore-ssl-errors=true'],
+    monitor: { stdout: 'GhostDriver - Main - running on port 4444' },
+    log: $.util.log
+  }),
+  cmdAndArgs = package.scripts.start.split(/\s/),
+  testServer = exec({
+    name: 'Test server',
+    cmd: cmdAndArgs[0],
+    args: cmdAndArgs.slice(1),
+    monitor: { url: 'http://localhost:8080/', checkHTTPResponse: false },
+    log: $.util.log,
+    stopSignal: 'SIGTERM'
+  });
 
 // Package management
 /* Install & update Bower dependencies */
@@ -47,8 +68,8 @@ gulp.task('serve', $.serve({
   middleware: function(req, res, next) {
     var u = url.parse(req.url);
 
-  	// Rewrite urls of form 'map', 'foo' & 'bar' to blank
-    var rule = /^\/(map|foo|bar)/;
+  	// Rewrite urls of form 'main' & 'sample' to blank
+    var rule = /^\/(main|sample)/;
 
   	if (u.pathname.match(rule)) {
   		u.pathname = u.pathname.replace(rule, '');
@@ -61,28 +82,33 @@ gulp.task('serve', $.serve({
   }
 }));
 
-gulp.task('javascript', function() {
+gulp.task('preprocess', function() {
+  return gulp.src('src/app/**/*.js')
+    .pipe($.jshint())
+    .pipe($.jshint.reporter('default'));
+});
+
+gulp.task('javascript', ['preprocess'], function() {
 
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
-  var bundleName = util.format('20-app-%s.js', config.version);
+  var bundleName = util.format('bundle-%s.js', config.version);
 
-  return $.bowerFiles()
-    // Compile
-    // Unit test
-    // Integrate (link, package, concatenate)
-    .pipe($.concat(bundleName))
-    // Integration test
-    .pipe(gulp.dest('dist'));
-
-  return gulp.src('src/app/**/*.js')
-    // Compile
-    // Unit test
-    // Integrate (link, package, concatenate)
+  // Note: two pipes get combined together by first
+  // combining components into one bundle, then adding
+  // app sources, and reordering the items. Note that
+  // we expect Angular to be the first item in bower.json
+  // so that component concatenation works
+  var components = $.bowerFiles()
     .pipe($.plumber())
+    .pipe($.concat('components.js'));
+
+  var app = gulp.src('src/app/**/*.js')
+    .pipe($.concat('app.js'));
+
+  eventStream.merge(components, app)
     .pipe($.concat(bundleName))
     .pipe($.if(config.debug, $.uglify()))
-    // Integration test
     .pipe(gulp.dest('dist'));
 });
 
@@ -116,7 +142,7 @@ gulp.task('assets', function() {
 });
 
 gulp.task('clean', function() {
-  gulp.src(['dist', 'temp'], { read: false })
+  return gulp.src(['dist', 'temp'], { read: false })
     .pipe($.clean());
 });
 
@@ -126,66 +152,73 @@ gulp.task('integrate', ['javascript', 'stylesheets', 'assets'], function() {
     .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('watch', ['integrate', 'test'], function() {
+gulp.task('integrate-test', function() {
+  console.log('integrate-test');
+  return runSequence(['integrate'], 'test-run');
+});
+
+gulp.task('watch', ['integrate', 'test-setup'], function() {
   var server = $.livereload();
 
-  // Watch the actual resources; Currently trigger a full rebuild
-  gulp.watch([
+  var stream = gulp.watch([
     'src/css/**/*.scss',
     'src/app/**/*.js',
-    'src/assets/**/*.html'
-  ], ['integrate']);
+    'src/assets/**/*.html',
+    'src/*.html'
+  ], ['integrate-test']);
 
   // Only livereload if the HTML (or other static assets) are changed, because
   // the HTML will change for any JS or CSS change
   gulp.src('dist/**', { read: false })
     .pipe($.watch())
     .pipe($.livereload());
+
+  return stream;
 });
 
-gulp.task('webdriver', function(cb) {
+gulp.task('test-setup', function(cb) {
 
-  if (config.debug) {
-    cb();
-  } else {
-
-    var phantom = require('phantomjs-server'),
-        webdriver = require('selenium-webdriver');
-
-    // Start PhantomJS
-    phantom.start().done(function() {
-      var driver = new webdriver.Builder()
-        .usingServer(phantom.address())
-        .build();
-      cb();
+  return testServer.start()
+    .then(ghostDriver.start)
+    .then(function() {
+      // Hookup to keyboard interrupts, so that we will
+      // execute teardown prior to exiting
+      process.once('SIGINT', function() {
+        return ghostDriver.stop()
+          .then(testServer.stop)
+          .then(function() {
+            process.exit();
+          })
+      });
+      return Promise.resolve();
     });
+})
 
-  }
+gulp.task('test-run', function() {
+  $.util.log('Running protractor');
 
-});
-
-gulp.task('webdriver_standalone', $.protractor.webdriver_standalone);
-
-gulp.task('test', ['webdriver'], function() {
-
-  if (config.debug) {
-    // Find the selenium server standalone jar file. Version number in the file name
-    // is due to change
-    var find = require('find'),
-        paths = find.fileSync(/selenium-server-standalone.*\.jar/, 'node_modules/protractor/selenium'),
-        args = ['--seleniumServerJar', paths[0]];
-  } else {
-    var args = ['--seleniumAddress', 'http://localhost:4444/'];
-  }
-
-  // Run tests
-  gulp.src(['tests/*.js'])
+  return new Promise(function(resolve, reject) {
+    gulp.src(['tests/*.js'])
+    .pipe($.plumber())
     .pipe($.protractor.protractor({
       configFile: 'protractor.config.js',
-      args: args
+      args: ['--seleniumAddress', 'http://localhost:4444/wd/hub',
+             '--baseUrl', 'http://localhost:8080/']
     }))
-    .on('error', function(e) { throw e; });
-
+    .on('end', function() {
+      resolve();
+    })
+    .on('error', function() {
+      resolve();
+    })
+  });
 });
 
-gulp.task('default', ['integrate', 'test']);
+gulp.task('test-teardown', function() {
+  return ghostDriver.stop()
+    .then(testServer.stop);
+})
+
+gulp.task('default', function() {
+  return runSequence(['integrate', 'test-setup'], 'test-run', 'test-teardown');
+});

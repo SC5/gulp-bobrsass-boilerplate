@@ -8,10 +8,18 @@
   <!-- inject:js -->
   <!-- endinject -->
 </head>
-<body>
-  <div ng-controller="MainController">
-    <a href="map">Map</a>
-    <div ng-view></div>
+<body ng-controller="MainController">
+  <header>
+    <a href="/">Main</a>
+    <a href="/sample">Sample</a>
+  </header>
+  <h1>BoBrSASS Test Page</h1>
+  <div id="status" ng-view>
+    <p>If you see this, something is wrong with your installation.</p>
   </div>
+  <footer>
+    <p>Copyright 2014 SC5 Online</p>
+  </footer>
+  <div ng-controller="MainController">
 </body>
 </html>

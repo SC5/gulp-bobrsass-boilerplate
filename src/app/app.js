@@ -1,5 +1,3 @@
-'use strict';
-
 angular.module('SC5AngularBoilerplate', [
     'ngResource',
     'ngRoute'
@@ -10,7 +8,7 @@ angular.module('SC5AngularBoilerplate', [
       when('/', {
           templateUrl: 'assets/views/main.html'
       }).
-      when('/map', {
+      when('/sample', {
           templateUrl: 'assets/views/sample.html',
           controller: 'SampleController'
       }).
