@@ -15,7 +15,8 @@ var config = {
   },
   ghostDriver = exec({
     name: 'Ghostdriver',
-    cmd: path.join(require.resolve('phantomjs'), '../phantom/bin',
+    cmd: path.join(require.resolve('phantomjs'), '../phantom',
+       (process.platform === 'win32' ? '' : 'bin'),
       'phantomjs' + (process.platform === 'win32' ? '.exe' : '')),
     args: ['--webdriver=4444', '--ignore-ssl-errors=true'],
     monitor: { stdout: 'GhostDriver - Main - running on port 4444' },
@@ -24,7 +25,7 @@ var config = {
   cmdAndArgs = package.scripts.start.split(/\s/),
   testServer = exec({
     name: 'Test server',
-    cmd: cmdAndArgs[0],
+    cmd: cmdAndArgs[0] + (process.platform === 'win32' ? '.cmd' : ''),
     args: cmdAndArgs.slice(1),
     monitor: { url: 'http://localhost:8080/', checkHTTPResponse: false },
     log: $.util.log,
