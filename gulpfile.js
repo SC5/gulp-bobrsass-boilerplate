@@ -101,15 +101,21 @@ gulp.task('javascript', ['preprocess'], function() {
   // we expect Angular to be the first item in bower.json
   // so that component concatenation works
   var components = $.bowerFiles()
+    .pipe($.filter('**/*.js'))
     .pipe($.plumber())
     .pipe($.concat('components.js'));
 
   var app = gulp.src('src/app/**/*.js')
     .pipe($.concat('app.js'));
 
-  eventStream.merge(components, app)
+  return eventStream.merge(components, app)
+    .pipe($.order([
+      '**/components.js',
+      '**/app.js'
+    ]))
     .pipe($.concat(bundleName))
-    .pipe($.if(config.debug, $.uglify()))
+    .pipe($.if(!config.debug, $.ngmin()))
+    .pipe($.if(!config.debug, $.uglify()))
     .pipe(gulp.dest('dist'));
 });
 
@@ -118,23 +124,33 @@ gulp.task('stylesheets', function() {
   // referring to in case of fixing bugs
   var bundleName = util.format('styles-%s.css', config.version);
 
-  return gulp.src('src/css/styles.scss')
+  // Pick all the 3rd party CSS and SASS, concat them into 3rd party
+  // components bundle. Then append them to our own sources, and 
+  // throw them all through Compass 
+  var components = $.bowerFiles()
+    .pipe($.filter(['**/*.css', '**/*.scss']))
+    .pipe($.concat('components.css'));
+
+  var app = gulp.src('src/css/styles.scss')
     .pipe($.plumber())
-    // Compile
     .pipe($.compass({
-        project: path.join(__dirname, 'src'),
-        sass: 'css',
-        css: '../temp/css'
+      project: path.join(__dirname, 'src'),
+      sass: 'css',
+      css: '../temp/css'
     }))
-    // Unit test
-    // Integrate (link, package, concatenate)
+    .pipe($.concat('app.css'));
+
+  return eventStream.merge(components, app)
+    .pipe($.order([
+      '**/components.css',
+      '**/app.css'
+    ]))
     .pipe($.concat(bundleName))
-    // Integrate
+    .pipe($.if(!config.debug,$.csso()))
     .pipe(gulp.dest('dist/css'))
-    // Integration test
     .pipe($.csslint())
     .pipe($.csslint.reporter());
-});
+}); 
 
 gulp.task('assets', function() {
   return gulp.src('src/assets/**')

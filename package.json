@@ -6,9 +6,10 @@
     "npm": ">=1.2.15"
   },
   "private": false,
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
+    "bluebird": "^2.1.3",
+    "event-stream": "^3.1.5",
     "exec-wait": "^0.0.3",
     "gulp": "^3.8.5",
     "gulp-bower": "^0.0.6",
@@ -19,11 +20,15 @@
     "gulp-compass": "^1.1.9",
     "gulp-concat": "^2.2.0",
     "gulp-csslint": "^0.1.4",
+    "gulp-csso": "^0.2.9",
+    "gulp-filter": "^0.5.0",
     "gulp-if": "^1.2.1",
     "gulp-inject": "^0.4.1",
     "gulp-jshint": "^1.6.4",
     "gulp-livereload": "^2.1.0",
     "gulp-load-plugins": "^0.5.3",
+    "gulp-ngmin": "^0.3.0",
+    "gulp-order": "^1.1.1",
     "gulp-plumber": "^0.6.3",
     "gulp-protractor": "0.0.11",
     "gulp-serve": "^0.2.0",
@@ -32,9 +37,7 @@
     "gulp-watch": "^0.6.8",
     "phantomjs": "^1.9.7-12",
     "protractor": "^1.0.0-rc2",
-    "run-sequence": "^0.3.6",
-    "event-stream": "^3.1.5",
-    "bluebird": "^2.1.3"
+    "run-sequence": "^0.3.6"
   },
   "scripts": {
     "install": "gulp install",
