@@ -3,6 +3,7 @@ var path = require('path'),
     gulp = require('gulp'),
     $ = require('gulp-load-plugins')(),
     runSequence = require('run-sequence'),
+    bowerFiles = require('main-bower-files'),
     Promise = require('bluebird'),
     exec = require('exec-wait'),
     eventStream = require('event-stream'),
@@ -55,12 +56,6 @@ gulp.task('bump', function() {
     .pipe(gulp.dest('./'));
 });
 
-// Cleanup
-gulp.task('clean', function() {
-  gulp.src('dist', { read: false })
-    .pipe($.clean());
-});
-
 /* Serve the web site */
 gulp.task('serve', $.serve({
   root: 'dist',
@@ -93,7 +88,6 @@ gulp.task('javascript', ['preprocess'], function() {
     .pipe($.plumber())
     .pipe($.browserify(browserifyConfig))
     .pipe($.concat(bundleName))
-    .pipe($.if(!config.debug, $.ngmin()))
     .pipe($.if(!config.debug, $.uglify()))
     .pipe(gulp.dest('dist'));
 });
@@ -106,7 +100,7 @@ gulp.task('stylesheets', function() {
   // Pick all the 3rd party CSS and SASS, concat them into 3rd party
   // components bundle. Then append them to our own sources, and 
   // throw them all through Compass 
-  var components = $.bowerFiles()
+  var components = gulp.src(bowerFiles())
     .pipe($.filter(['**/*.css', '**/*.scss']))
     .pipe($.concat('components.css'));
 
@@ -139,7 +133,7 @@ gulp.task('assets', function() {
 
 gulp.task('clean', function() {
   return gulp.src(['dist', 'temp'], { read: false })
-    .pipe($.clean());
+    .pipe($.rimraf());
 });
 
 gulp.task('integrate', ['javascript', 'stylesheets', 'assets'], function() {
