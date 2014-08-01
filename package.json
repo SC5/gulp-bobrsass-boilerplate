@@ -1,21 +1,17 @@
 {
   "name": "gulp-bobrsass-boilerplate",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "engines": {
     "node": ">=0.10.10",
     "npm": ">=1.2.15"
   },
   "private": false,
-  "dependencies": {},
-  "devDependencies": {
-    "bluebird": "^2.2.2",
+  "dependencies": {
     "event-stream": "^3.1.5",
-    "exec-wait": "^0.0.3",
     "gulp": "^3.8.6",
     "gulp-bower": "^0.0.6",
     "gulp-bower-files": "^0.2.5",
     "gulp-browserify": "^0.5.0",
-    "gulp-bump": "^0.1.10",
     "gulp-compass": "^1.1.9",
     "gulp-concat": "^2.3.3",
     "gulp-csslint": "^0.1.4",
@@ -23,26 +19,31 @@
     "gulp-filter": "^0.5.0",
     "gulp-if": "^1.2.2",
     "gulp-inject": "^0.4.1",
-    "gulp-jshint": "^1.7.1",
-    "gulp-livereload": "^2.1.0",
+    "gulp-jshint": "^1.8.3",
     "gulp-load-plugins": "^0.5.3",
     "gulp-ngmin": "^0.3.0",
     "gulp-order": "^1.1.1",
     "gulp-plumber": "^0.6.3",
-    "gulp-protractor": "0.0.11",
     "gulp-rimraf": "^0.1.0",
     "gulp-serve": "^0.2.0",
     "gulp-uglify": "^0.3.1",
     "gulp-util": "^2.2.20",
     "gulp-watch": "^0.6.8",
     "main-bower-files": "^1.0.1",
-    "phantomjs": "^1.9.7-14",
-    "protractor": "^1.0.0-rc6",
     "run-sequence": "^0.3.6"
+  },
+  "devDependencies": {
+    "bluebird": "^2.2.2",
+    "exec-wait": "^0.0.3",
+    "gulp-bump": "^0.1.10",
+    "gulp-livereload": "^2.1.0",
+    "gulp-protractor": "0.0.11",
+    "phantomjs": "^1.9.7-14",
+    "protractor": "^1.0.0-rc6"
   },
   "scripts": {
     "install": "gulp install",
-    "build": "gulp",
+    "build": "gulp integrate",
     "test": "gulp test",
     "start": "gulp serve"
   }

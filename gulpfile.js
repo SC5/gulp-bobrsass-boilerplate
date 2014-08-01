@@ -5,8 +5,6 @@ var path = require('path'),
     $ = require('gulp-load-plugins')(),
     runSequence = require('run-sequence'),
     bowerFiles = require('main-bower-files'),
-    Promise = require('bluebird'),
-    exec = require('exec-wait'),
     eventStream = require('event-stream'),
     package = require('./package.json');
 
@@ -14,26 +12,11 @@ var path = require('path'),
 the task context. These are mainly for repeating configuration items */
 var config = {
     version: package.version,
-    debug: Boolean($.util.env.debug)
+    debug: Boolean($.util.env.debug),
+    production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
   },
-  ghostDriver = exec({
-    name: 'Ghostdriver',
-    cmd: path.join(require.resolve('phantomjs'), '../phantom',
-       (process.platform === 'win32' ? '' : 'bin'),
-      'phantomjs' + (process.platform === 'win32' ? '.exe' : '')),
-    args: ['--webdriver=4444', '--ignore-ssl-errors=true'],
-    monitor: { stdout: 'GhostDriver - Main - running on port 4444' },
-    log: $.util.log
-  }),
-  cmdAndArgs = package.scripts.start.split(/\s/),
-  testServer = exec({
-    name: 'Test server',
-    cmd: cmdAndArgs[0] + (process.platform === 'win32' ? '.cmd' : ''),
-    args: cmdAndArgs.slice(1),
-    monitor: { url: 'http://localhost:8080/', checkHTTPResponse: false },
-    log: $.util.log,
-    stopSignal: 'SIGTERM'
-  });
+  // Global vars used across the test tasks
+  ghostDriver, testServer, Promise, exec;
 
 // Package management
 /* Install & update Bower dependencies */
@@ -42,7 +25,9 @@ gulp.task('install', function() {
   // For now, use .bowerrc; No need for piping, either
   $.bower();
   // Downloads the Selenium webdriver
-  $.protractor.webdriver_update(function() {});
+  if (!config.production) {
+    $.protractor.webdriver_update(function() {});
+  }
 });
 
 /* Bump version number for package.json & bower.json */
@@ -64,15 +49,15 @@ gulp.task('serve', $.serve({
   middleware: function(req, res, next) {
     var u = url.parse(req.url);
 
-  	// Rewrite urls of form 'main' & 'sample' to blank
+    // Rewrite urls of form 'main' & 'sample' to blank
     var rule = /^\/(main|sample)/;
 
-  	if (u.pathname.match(rule)) {
-  		u.pathname = u.pathname.replace(rule, '');
-  		var original = req.url;
-  		req.url = url.format(u);
-  		console.log('Rewrote', original, 'to', req.url);
-  	}
+    if (u.pathname.match(rule)) {
+      u.pathname = u.pathname.replace(rule, '');
+      var original = req.url;
+      req.url = url.format(u);
+      console.log('Rewrote', original, 'to', req.url);
+    }
 
     next();
   }
@@ -141,10 +126,10 @@ gulp.task('stylesheets', function() {
       '**/app.css'
     ]))
     .pipe($.concat(bundleName))
-    .pipe($.if(!config.debug,$.csso()))
+    .pipe($.if(!config.debug, $.csso()))
     .pipe(gulp.dest('dist/css'))
-    .pipe($.csslint())
-    .pipe($.csslint.reporter());
+    .pipe($.if(!config.production, $.csslint()))
+    .pipe($.if(!config.production, $.csslint.reporter()));
 }); 
 
 gulp.task('assets', function() {
@@ -189,6 +174,28 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
 });
 
 gulp.task('test-setup', function(cb) {
+  var cmdAndArgs = package.scripts.start.split(/\s/);
+
+  // Setup the global vars that will be used across the test tasks
+  Promise = require('bluebird');
+  exec = require('exec-wait');
+  ghostDriver = exec({
+    name: 'Ghostdriver',
+    cmd: path.join(require.resolve('phantomjs'), '../phantom',
+       (process.platform === 'win32' ? '' : 'bin'),
+      'phantomjs' + (process.platform === 'win32' ? '.exe' : '')),
+    args: ['--webdriver=4444', '--ignore-ssl-errors=true'],
+    monitor: { stdout: 'GhostDriver - Main - running on port 4444' },
+    log: $.util.log
+  });
+  testServer = exec({
+    name: 'Test server',
+    cmd: cmdAndArgs[0] + (process.platform === 'win32' ? '.cmd' : ''),
+    args: cmdAndArgs.slice(1),
+    monitor: { url: 'http://localhost:8080/', checkHTTPResponse: false },
+    log: $.util.log,
+    stopSignal: 'SIGTERM'
+  });
 
   return testServer.start()
     .then(ghostDriver.start)
