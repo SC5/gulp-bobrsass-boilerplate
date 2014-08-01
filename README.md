@@ -62,6 +62,13 @@ To keep gulp running and watch for changes, use e.g.
 
     > gulp watch --debug
 
+To install, build and start everything in production mode (e.g. no devdependencies), do the whole
+shebang as follows:
+
+    > npm install --production
+    > npm run-script build
+    > npm start
+
 To update your package version, you eventually want to do one of the following:
 
     > gulp bump --patch
@@ -154,6 +161,7 @@ Or in debug mode with chromedriver in a browser:
 * 2014/05/08 - v0.2.0 - Update dependecies, add linting and plugin loader, update README
 * 2014/05/09 - v0.3.0 - Add Protractor test framework, update README
 * 2014/05/14 - v0.3.1 - Better linting
+* 2014/08/01 - v0.4.0 - Clear separation of dev. and product dependencies
 
 ## License
 
