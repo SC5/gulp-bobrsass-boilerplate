@@ -174,16 +174,16 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
 });
 
 gulp.task('test-setup', function(cb) {
-  var cmdAndArgs = package.scripts.start.split(/\s/);
+  var cmdAndArgs = package.scripts.start.split(/\s/),
+      cmdPath = path.dirname(require.resolve('phantomjs')),
+      cmd = path.resolve(cmdPath, require(path.join(cmdPath, 'location')).location);
 
   // Setup the global vars that will be used across the test tasks
   Promise = require('bluebird');
   exec = require('exec-wait');
   ghostDriver = exec({
     name: 'Ghostdriver',
-    cmd: path.join(require.resolve('phantomjs'), '../phantom',
-       (process.platform === 'win32' ? '' : 'bin'),
-      'phantomjs' + (process.platform === 'win32' ? '.exe' : '')),
+    cmd: cmd,
     args: ['--webdriver=4444', '--ignore-ssl-errors=true'],
     monitor: { stdout: 'GhostDriver - Main - running on port 4444' },
     log: $.util.log
@@ -238,6 +238,10 @@ gulp.task('test-teardown', function() {
     .then(testServer.stop);
 })
 
+gulp.task('test', function() {
+  return runSequence(['test-setup'], 'test-run', 'test-teardown');
+});
+
 gulp.task('default', function() {
-  return runSequence(['integrate', 'test-setup'], 'test-run', 'test-teardown');
+  return runSequence(['integrate', 'test']);
 });

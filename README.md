@@ -1,5 +1,5 @@
 # Gulp BoBrSASS Boilerplate
-[![Build Status](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)
+[![Build Status](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=angularjs)](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)
 
 Gulp BoBrSASS Boilerplate is an evolutionary step from our earlier
 [Grunt BoReLESS Boilerplate](https://github.com/SC5/grunt-boreless-boilerplate?source=cc).
