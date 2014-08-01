@@ -32,9 +32,9 @@
   },
   "devDependencies": {
     "bluebird": "^2.2.2",
+    "browser-sync": "^1.3.2",
     "exec-wait": "^0.0.3",
     "gulp-bump": "^0.1.10",
-    "gulp-livereload": "^2.1.0",
     "gulp-protractor": "0.0.11",
     "phantomjs": "^1.9.7-15",
     "protractor": "^1.0.0-rc6"

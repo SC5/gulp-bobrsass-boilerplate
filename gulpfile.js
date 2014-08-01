@@ -133,20 +133,21 @@ gulp.task('integrate-test', function() {
 });
 
 gulp.task('watch', ['integrate', 'test-setup'], function() {
-  var server = $.livereload();
+  var browserSync = require('browser-sync'),
+      stream = gulp.watch([
+        'src/css/**/*.scss',
+        'src/app/**/*.js',
+        'src/app/**/*.hbs',
+        'src/*.html'
+      ], ['integrate-test']);
 
-  var stream = gulp.watch([
-    'src/css/**/*.scss',
-    'src/app/**/*.js',
-    'src/app/**/*.hbs',
-    'src/*.html'
-  ], ['integrate-test']);
-
-  // Only livereload if the HTML (or other static assets) are changed, because
-  // the HTML will change for any JS or CSS change
-  gulp.src('dist/**', { read: false })
-    .pipe($.watch())
-    .pipe($.livereload());
+  // Watch any changes to the dist directory
+  $.util.log('Initialise BrowserSync on port 8081');
+  browserSync.init({
+    files: 'dist/**/*',
+    proxy: 'localhost:8080',
+    port: 8081
+  });
 
   return stream;
 });
