@@ -1,6 +1,6 @@
 {
   "name": "gulp-bobrsass-boilerplate",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "engines": {
     "node": ">=0.10.10",
     "npm": ">=1.2.15"
@@ -11,6 +11,8 @@
     "gulp": "^3.8.6",
     "gulp-bower": "^0.0.6",
     "gulp-browserify": "^0.5.0",
+    "gulp-cached": "^1.0.1",
+    "gulp-changed": "^0.4.1",
     "gulp-compass": "^1.1.9",
     "gulp-concat": "^2.3.3",
     "gulp-csslint": "^0.1.4",
