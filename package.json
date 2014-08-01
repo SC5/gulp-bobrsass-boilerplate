@@ -42,7 +42,7 @@
   "scripts": {
     "install": "gulp install",
     "build": "gulp integrate",
-    "test": "gulp test",
+    "test": "gulp integrate test",
     "start": "gulp serve"
   }
 }

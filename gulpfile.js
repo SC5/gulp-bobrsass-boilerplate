@@ -216,6 +216,10 @@ gulp.task('test-teardown', function() {
     .then(testServer.stop);
 })
 
+gulp.task('test', function() {
+  return runSequence(['test-setup'], 'test-run', 'test-teardown');
+});
+
 gulp.task('default', function() {
-  return runSequence(['integrate', 'test-setup'], 'test-run', 'test-teardown');
+  return runSequence(['integrate', 'test']);
 });
