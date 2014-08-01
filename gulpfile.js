@@ -153,21 +153,15 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
 
 gulp.task('test-setup', function(cb) {
   var cmdAndArgs = package.scripts.start.split(/\s/),
-      phantomPath = require.resolve('phantomjs'),
-      dir = path.join(path.dirname(phantomPath), 'phantom'),
-      cmd = 'phantomjs' + (process.platform === 'win32' ? '.exe' : '');
-
-  if (process.platform !== 'win32') {
-    dir = path.join(dir, 'bin');
-  }
-  console.log(path.join(dir, cmd));
+      cmdPath = path.dirname(require.resolve('phantomjs')),
+      cmd = path.resolve(cmdPath, require(path.join(cmdPath, 'location')).location);
 
   // Setup the global vars that will be used across the test tasks
   Promise = require('bluebird');
   exec = require('exec-wait');
   ghostDriver = exec({
     name: 'Ghostdriver',
-    cmd: path.join(dir, cmd),
+    cmd: cmd,
     args: ['--webdriver=4444', '--ignore-ssl-errors=true'],
     monitor: { stdout: 'GhostDriver - Main - running on port 4444' },
     log: $.util.log
