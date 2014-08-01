@@ -16,7 +16,7 @@ var config = {
     production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
   },
   // Global vars used across the test tasks
-  ghostDriver, testServer, Promise, exec;
+  ghostDriver, testServer;
 
 // Package management
 /* Install & update Bower dependencies */
@@ -24,10 +24,6 @@ gulp.task('install', function() {
   // FIXME specifying the component directory broken in gulp
   // For now, use .bowerrc; No need for piping, either
   $.bower();
-  // Downloads the Selenium webdriver
-  if (!config.production) {
-    $.protractor.webdriver_update(function() {});
-  }
 });
 
 /* Bump version number for package.json & bower.json */
@@ -65,12 +61,12 @@ gulp.task('serve', $.serve({
 
 gulp.task('preprocess', function() {
   return gulp.src('src/app/**/*.js')
+    .pipe($.cached('jslint'))
     .pipe($.jshint())
     .pipe($.jshint.reporter('default'));
 });
 
 gulp.task('javascript', ['preprocess'], function() {
-
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
   var bundleName = util.format('bundle-%s.js', config.version);
@@ -134,6 +130,7 @@ gulp.task('stylesheets', function() {
 
 gulp.task('assets', function() {
   return gulp.src('src/assets/**')
+    .pipe($.cached('assets'))
     .pipe(gulp.dest('dist/assets'));
     // Integration test
 });
@@ -143,44 +140,46 @@ gulp.task('clean', function() {
     .pipe($.rimraf());
 });
 
-gulp.task('integrate', ['javascript', 'stylesheets', 'assets'], function() {
+gulp.task('integrate', function() {
   return gulp.src(['dist/*.js', 'dist/css/*.css'])
     .pipe($.inject('src/index.html', { ignorePath: ['/dist/'], addRootSlash: false }))
     .pipe(gulp.dest('./dist'));
 });
 
 gulp.task('integrate-test', function() {
-  console.log('integrate-test');
-  return runSequence(['integrate'], 'test-run');
+  return runSequence('integrate', 'test-run');
 });
 
 gulp.task('watch', ['integrate', 'test-setup'], function() {
-  var server = $.livereload();
+  var browserSync = require('browser-sync');
 
-  var stream = gulp.watch([
-    'src/css/**/*.scss',
-    'src/app/**/*.js',
-    'src/assets/**/*.html',
-    'src/*.html'
-  ], ['integrate-test']);
+  // Compose several watch streams, each resulting in their own pipe
+  gulp.watch('src/css/**/*.scss', function() {
+    return runSequence('stylesheets', 'integrate-test');
+  });
+  gulp.watch('src/app/**/*.js', function() {
+    return runSequence('javascript', 'integrate-test');
+  });
+  gulp.watch('src/assets/**', function() {
+    return runSequence('assets', 'integrate-test');
+  });
 
-  // Only livereload if the HTML (or other static assets) are changed, because
-  // the HTML will change for any JS or CSS change
-  gulp.src('dist/**', { read: false })
-    .pipe($.watch())
-    .pipe($.livereload());
-
-  return stream;
+  // Watch any changes to the dist directory
+  $.util.log('Initialise BrowserSync on port 8081');
+  browserSync.init({
+    files: 'dist/**/*',
+    proxy: 'localhost:8080',
+    port: 8081
+  });
 });
 
 gulp.task('test-setup', function(cb) {
   var cmdAndArgs = package.scripts.start.split(/\s/),
       cmdPath = path.dirname(require.resolve('phantomjs')),
-      cmd = path.resolve(cmdPath, require(path.join(cmdPath, 'location')).location);
+      cmd = path.resolve(cmdPath, require(path.join(cmdPath, 'location')).location),
+      exec = require('exec-wait'),
+      Promise = require('bluebird');
 
-  // Setup the global vars that will be used across the test tasks
-  Promise = require('bluebird');
-  exec = require('exec-wait');
   ghostDriver = exec({
     name: 'Ghostdriver',
     cmd: cmd,
@@ -214,6 +213,7 @@ gulp.task('test-setup', function(cb) {
 })
 
 gulp.task('test-run', function() {
+  var Promise = require('bluebird');
   $.util.log('Running protractor');
 
   return new Promise(function(resolve, reject) {
@@ -239,9 +239,9 @@ gulp.task('test-teardown', function() {
 })
 
 gulp.task('test', function() {
-  return runSequence(['test-setup'], 'test-run', 'test-teardown');
+  return runSequence('test-setup', 'test-run', 'test-teardown');
 });
 
 gulp.task('default', function() {
-  return runSequence(['integrate', 'test']);
+  return runSequence(['javascript', 'stylesheets', 'assets'], 'integrate', 'test');
 });
