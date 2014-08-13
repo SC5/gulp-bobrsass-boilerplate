@@ -1,9 +1,11 @@
 var path = require('path'),
     util = require('util'),
     gulp = require('gulp'),
+    url = require('url'),
     $ = require('gulp-load-plugins')(),
     runSequence = require('run-sequence'),
     bowerFiles = require('main-bower-files'),
+    templateCache = require('gulp-angular-templatecache'),
     eventStream = require('event-stream'),
     package = require('./package.json');
 
@@ -40,7 +42,22 @@ gulp.task('bump', function() {
 /* Serve the web site */
 gulp.task('serve', $.serve({
   root: 'dist',
-  port: 8080
+  port: 8080,
+  middleware: function(req, res, next) {
+    var u = url.parse(req.url);
+
+    // Rewrite urls of form 'main' & 'sample' to blank
+    var rule = /^\/(main|sample)/;
+
+    if (u.pathname.match(rule)) {
+      u.pathname = u.pathname.replace(rule, '');
+      var original = req.url;
+      req.url = url.format(u);
+      console.log('Rewrote', original, 'to', req.url);
+    }
+
+    next();
+  }
 }));
 
 gulp.task('preprocess', function() {
@@ -53,22 +70,32 @@ gulp.task('preprocess', function() {
 gulp.task('javascript', ['preprocess'], function() {
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
-  var bundleName = util.format('bundle-%s.js', config.version),
-      componentsPath = 'src/components',
-      browserifyConfig = {
-        debug: config.debug,
-        shim: {
-          jquery: {
-            path: path.join(componentsPath, 'jquery/dist/jquery.js'),
-            exports: 'jQuery'
-          }
-        }
-      };
+  var bundleName = util.format('bundle-%s.js', config.version);
 
-  return gulp.src('src/app/main.js', { read: false })
+  // Note: two pipes get combined together by first
+  // combining components into one bundle, then adding
+  // app sources, and reordering the items. Note that
+  // we expect Angular to be the first item in bower.json
+  // so that component concatenation works
+  var components = gulp.src(bowerFiles())
+    .pipe($.filter('**/*.js'))
     .pipe($.plumber())
-    .pipe($.browserify(browserifyConfig))
+    .pipe($.concat('components.js'));
+
+  var templates = gulp.src('src/assets/**/*.html')
+    .pipe(templateCache('templates.js', { standalone: true, root: 'assets' }))
+
+  var app = gulp.src('src/app/**/*.js')
+    .pipe($.concat('app.js'));
+
+  return eventStream.merge(components, app, templates)
+    .pipe($.order([
+      '**/components.js',
+      '**/templates.js',
+      '**/app.js'
+    ]))
     .pipe($.concat(bundleName))
+    .pipe($.if(!config.debug, $.ngmin()))
     .pipe($.if(!config.debug, $.uglify()))
     .pipe(gulp.dest('dist'));
 });
@@ -79,8 +106,8 @@ gulp.task('stylesheets', function() {
   var bundleName = util.format('styles-%s.css', config.version);
 
   // Pick all the 3rd party CSS and SASS, concat them into 3rd party
-  // components bundle. Then append them to our own sources, and 
-  // throw them all through Compass 
+  // components bundle. Then append them to our own sources, and
+  // throw them all through Compass
   var components = gulp.src(bowerFiles())
     .pipe($.filter(['**/*.css', '**/*.scss']))
     .pipe($.concat('components.css'));
@@ -104,7 +131,7 @@ gulp.task('stylesheets', function() {
     .pipe(gulp.dest('dist/css'))
     .pipe($.if(!config.production, $.csslint()))
     .pipe($.if(!config.production, $.csslint.reporter()));
-}); 
+});
 
 gulp.task('assets', function() {
   return gulp.src('src/assets/**')
