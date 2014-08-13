@@ -1,6 +1,7 @@
 angular.module('SC5AngularBoilerplate', [
     'ngResource',
-    'ngRoute'
+    'ngRoute',
+    'templates'
   ])
   .config(function($routeProvider, $locationProvider) {
     console.log('Hello from config');

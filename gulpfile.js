@@ -5,6 +5,7 @@ var path = require('path'),
     $ = require('gulp-load-plugins')(),
     runSequence = require('run-sequence'),
     bowerFiles = require('main-bower-files'),
+    templateCache = require('gulp-angular-templatecache'),
     eventStream = require('event-stream'),
     package = require('./package.json');
 
@@ -81,12 +82,16 @@ gulp.task('javascript', ['preprocess'], function() {
     .pipe($.plumber())
     .pipe($.concat('components.js'));
 
+  var templates = gulp.src('src/assets/**/*.html')
+    .pipe(templateCache('templates.js', { standalone: true, root: 'assets' }))
+
   var app = gulp.src('src/app/**/*.js')
     .pipe($.concat('app.js'));
 
-  return eventStream.merge(components, app)
+  return eventStream.merge(components, app, templates)
     .pipe($.order([
       '**/components.js',
+      '**/templates.js',
       '**/app.js'
     ]))
     .pipe($.concat(bundleName))
@@ -101,8 +106,8 @@ gulp.task('stylesheets', function() {
   var bundleName = util.format('styles-%s.css', config.version);
 
   // Pick all the 3rd party CSS and SASS, concat them into 3rd party
-  // components bundle. Then append them to our own sources, and 
-  // throw them all through Compass 
+  // components bundle. Then append them to our own sources, and
+  // throw them all through Compass
   var components = gulp.src(bowerFiles())
     .pipe($.filter(['**/*.css', '**/*.scss']))
     .pipe($.concat('components.css'));
@@ -126,7 +131,7 @@ gulp.task('stylesheets', function() {
     .pipe(gulp.dest('dist/css'))
     .pipe($.if(!config.production, $.csslint()))
     .pipe($.if(!config.production, $.csslint.reporter()));
-}); 
+});
 
 gulp.task('assets', function() {
   return gulp.src('src/assets/**')
