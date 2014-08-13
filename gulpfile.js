@@ -138,7 +138,7 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
   gulp.watch('src/app/**/*.js', function() {
     return runSequence('javascript', 'integrate-test');
   });
-  gulp.watch('src/assets/**', function() {
+  gulp.watch(['src/assets/**','src/**/*.html'], function() {
     return runSequence('assets', 'integrate-test');
   });
 
