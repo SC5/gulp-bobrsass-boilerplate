@@ -1,5 +1,9 @@
 {
   "name": "gulp-bobrsass-boilerplate",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/SC5/gulp-bobrsass-boilerplate.git"
+  },
   "version": "0.5.0",
   "engines": {
     "node": ">=0.10.10",
@@ -44,8 +48,8 @@
   },
   "scripts": {
     "install": "gulp install",
-    "build": "gulp integrate",
-    "test": "gulp default test",
+    "build": "gulp build",
+    "test": "gulp build test",
     "start": "gulp serve"
   }
 }

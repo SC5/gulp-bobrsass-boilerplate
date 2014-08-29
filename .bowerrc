@@ -1,4 +1,5 @@
 {
-	"directory": "src/components",
-	"json": "bower.json"
+  "directory": "src/components",
+  "interactive": false,
+  "json": "bower.json"
 }

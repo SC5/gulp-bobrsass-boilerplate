@@ -4,3 +4,4 @@ node_modules
 src/components
 src/.sass-cache
 phantomjs.log
+*.sublime-*
