@@ -45,7 +45,7 @@
   "scripts": {
     "install": "gulp install",
     "build": "gulp integrate",
-    "test": "gulp integrate test",
+    "test": "gulp default test",
     "start": "gulp serve"
   }
 }
