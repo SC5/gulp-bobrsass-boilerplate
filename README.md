@@ -83,6 +83,23 @@ server, instead. The task below, will default to 'gulp serve' by default until y
 
     > npm start
 
+Boilerplate also comes with Docker support. To build and run the container, run:
+
+    > docker build -t bobrsass .
+    > docker run -d -P bobrsass
+
+To access the service, check the dynamically allocated port (for example: 0.0.0.0:49164->8080/tcp)
+and use it in browser URL
+
+    > docker ps
+    # --> http://localhost:49164/
+
+Localhost works in Linux environment, but if you are using boot2docker, you need to use VM IP instead.
+Check the IP and replace `localhost` with it:
+
+    > boot2docker ip
+    # --> http://192.168.59.103:49164/
+
 ### Live reloading the changes
 
 Live reloading is enabled when running *gulp watch* in another window. Just change any of your

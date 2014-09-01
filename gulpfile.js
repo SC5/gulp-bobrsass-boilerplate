@@ -37,6 +37,10 @@ gulp.task('bump', function() {
     .pipe(gulp.dest('./'));
 });
 
+gulp.task('build', function() {
+  return runSequence(['javascript', 'stylesheets', 'assets'], 'integrate', 'test');
+});
+
 /* Serve the web site */
 gulp.task('serve', $.serve({
   root: 'dist',
@@ -79,8 +83,8 @@ gulp.task('stylesheets', function() {
   var bundleName = util.format('styles-%s.css', config.version);
 
   // Pick all the 3rd party CSS and SASS, concat them into 3rd party
-  // components bundle. Then append them to our own sources, and 
-  // throw them all through Compass 
+  // components bundle. Then append them to our own sources, and
+  // throw them all through Compass
   var components = gulp.src(bowerFiles())
     .pipe($.filter(['**/*.css', '**/*.scss']))
     .pipe($.concat('components.css'));
@@ -104,7 +108,7 @@ gulp.task('stylesheets', function() {
     .pipe(gulp.dest('dist/css'))
     .pipe($.if(!config.production, $.csslint()))
     .pipe($.if(!config.production, $.csslint.reporter()));
-}); 
+});
 
 gulp.task('assets', function() {
   return gulp.src('src/assets/**')
@@ -220,6 +224,4 @@ gulp.task('test', function() {
   return runSequence('test-setup', 'test-run', 'test-teardown');
 });
 
-gulp.task('default', function() {
-  return runSequence(['javascript', 'stylesheets', 'assets'], 'integrate', 'test');
-});
+gulp.task('default', ['build']);
