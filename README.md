@@ -35,6 +35,10 @@ Compass framework for compiling SASS stylesheets into CSS and sprite sheets:
 
 Note that you may need to first uninstall other SASS versions than (3.2.x).
 
+You will also need [Git](http://git-scm.com/).  When installing
+[Git on Windows](http://msysgit.github.io/), remember to enable usage
+from command prompt.
+
 Installing the project itself is easy. Both build system dependencies and app dependencies are
 triggered by
 
