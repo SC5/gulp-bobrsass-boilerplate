@@ -1,5 +1,5 @@
 {
-    "preset": "airbnb",
+  "preset": "airbnb",
 
-    "validateIndentation": 2
+  "validateIndentation": 2
 }
