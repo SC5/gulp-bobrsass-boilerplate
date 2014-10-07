@@ -144,10 +144,6 @@ gulp.task('integrate', function() {
   return target
     .pipe($.inject(source, params))
     .pipe(gulp.dest('./dist'));
-
-  /*return gulp.src(['dist/*.js', 'dist/css/*.css'])
-    .pipe($.inject('src/index.html', { ignorePath: ['/dist/'], addRootSlash: false }))
-    .pipe(gulp.dest('./dist'));*/
 });
 
 gulp.task('integrate-test', function() {
