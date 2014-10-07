@@ -1,6 +1,7 @@
 temp
 dist
 node_modules
-src/components
+src/app/bower_components
 src/.sass-cache
 phantomjs.log
+.tmp/

@@ -2,7 +2,7 @@ describe('test page', function() {
 
   it('should load', function() {
 
-    browser.driver.get('http://localhost:8080/');
+    browser.driver.get('http://localhost:3000/index.html');
 
     var status = browser.driver.findElement(by.id('status'));
 
