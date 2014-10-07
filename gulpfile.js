@@ -87,7 +87,7 @@ gulp.task('javascript', ['preprocess'], function() {
     .pipe($.concat('components.js'));
 
   var templates = gulp.src('src/assets/**/*.html')
-    .pipe(templateCache('templates.js', { standalone: true, root: 'assets' }))
+    .pipe(templateCache('templates.js', { standalone: true, root: 'assets' }));
 
   var app = gulp.src('src/app/**/*.js')
     .pipe($.concat('app.js'));
