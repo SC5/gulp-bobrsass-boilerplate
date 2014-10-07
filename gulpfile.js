@@ -1,6 +1,7 @@
 var path = require('path'),
     util = require('util'),
     gulp = require('gulp'),
+    jscs = require('gulp-jscs'),
     $ = require('gulp-load-plugins')(),
     runSequence = require('run-sequence'),
     bowerFiles = require('main-bower-files'),
@@ -46,6 +47,11 @@ gulp.task('serve', $.serve({
   root: 'dist',
   port: 8080
 }));
+
+gulp.task('jscs', function(){
+    return gulp.src(['src/app/**/*.js'])
+        .pipe(jscs());
+});
 
 gulp.task('preprocess', function() {
   return gulp.src('src/app/**/*.js')
@@ -238,4 +244,4 @@ gulp.task('test', function() {
   return runSequence('test-setup', 'test-run', 'test-teardown');
 });
 
-gulp.task('default', ['build']);
+gulp.task('default', ['jscs', 'build']);
