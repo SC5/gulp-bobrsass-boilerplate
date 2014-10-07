@@ -35,6 +35,10 @@ Compass framework for compiling SASS stylesheets into CSS and sprite sheets:
 
 Note that you may need to first uninstall other SASS versions than (3.2.x).
 
+You will also need [Git](http://git-scm.com/).  When installing
+[Git on Windows](http://msysgit.github.io/), remember to enable usage
+from command prompt.
+
 Installing the project itself is easy. Both build system dependencies and app dependencies are
 triggered by
 
@@ -82,6 +86,23 @@ Most likely the normal *gulp serve* task will not suffice, and you want to run y
 server, instead. The task below, will default to 'gulp serve' by default until you change it:
 
     > npm start
+
+Boilerplate also comes with Docker support. To build and run the container, run:
+
+    > docker build -t bobrsass .
+    > docker run -d -P bobrsass
+
+To access the service, check the dynamically allocated port (for example: 0.0.0.0:49164->8080/tcp)
+and use it in browser URL
+
+    > docker ps
+    # --> http://localhost:49164/
+
+Localhost works in Linux environment, but if you are using boot2docker, you need to use VM IP instead.
+Check the IP and replace `localhost` with it:
+
+    > boot2docker ip
+    # --> http://192.168.59.103:49164/
 
 ### Live reloading the changes
 

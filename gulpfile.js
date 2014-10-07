@@ -39,6 +39,10 @@ gulp.task('bump', function() {
     .pipe(gulp.dest('./'));
 });
 
+gulp.task('build', function() {
+  return runSequence(['javascript', 'stylesheets', 'assets'], 'integrate', 'test');
+});
+
 /* Serve the web site */
 gulp.task('serve', $.serve({
   root: 'dist',
@@ -134,21 +138,35 @@ gulp.task('stylesheets', function() {
 });
 
 gulp.task('assets', function() {
+
   return gulp.src('src/assets/**')
     .pipe($.cached('assets'))
     .pipe(gulp.dest('dist/assets'));
     // Integration test
 });
 
-gulp.task('clean', function() {
-  return gulp.src(['dist', 'temp'], { read: false })
-    .pipe($.rimraf());
+gulp.task('clean', function(cb) {
+  var del = require('del');
+
+  del([
+    'dist',
+    // here we use a globbing pattern to match everything inside the `mobile` folder
+    'temp'
+  ], cb);
 });
 
 gulp.task('integrate', function() {
-  return gulp.src(['dist/*.js', 'dist/css/*.css'])
-    .pipe($.inject('src/index.html', { ignorePath: ['/dist/'], addRootSlash: false }))
+  var target = gulp.src('src/index.html'),
+      source = gulp.src(['dist/*.js', 'dist/css/*.css'], { read: false }),
+      params = { ignorePath: ['/dist/'], addRootSlash: false };
+
+  return target
+    .pipe($.inject(source, params))
     .pipe(gulp.dest('./dist'));
+
+  /*return gulp.src(['dist/*.js', 'dist/css/*.css'])
+    .pipe($.inject('src/index.html', { ignorePath: ['/dist/'], addRootSlash: false }))
+    .pipe(gulp.dest('./dist'));*/
 });
 
 gulp.task('integrate-test', function() {
@@ -165,7 +183,7 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
   gulp.watch('src/app/**/*.js', function() {
     return runSequence('javascript', 'integrate-test');
   });
-  gulp.watch('src/assets/**', function() {
+  gulp.watch(['src/assets/**','src/**/*.html'], function() {
     return runSequence('assets', 'integrate-test');
   });
 
@@ -247,6 +265,4 @@ gulp.task('test', function() {
   return runSequence('test-setup', 'test-run', 'test-teardown');
 });
 
-gulp.task('default', function() {
-  return runSequence(['javascript', 'stylesheets', 'assets'], 'integrate', 'test');
-});
+gulp.task('default', ['build']);
