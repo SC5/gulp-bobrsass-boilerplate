@@ -92,7 +92,7 @@ gulp.task('javascript', ['preprocess'], function() {
   var app = gulp.src('src/app/**/*.js')
     .pipe($.concat('app.js'));
 
-  return eventStream.merge(components, app, templates)
+  return eventStream.merge(components, templates, app)
     .pipe($.order([
       '**/components.js',
       '**/templates.js',
@@ -180,10 +180,10 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
   gulp.watch('src/css/**/*.scss', function() {
     return runSequence('stylesheets', 'integrate-test');
   });
-  gulp.watch('src/app/**/*.js', function() {
+  gulp.watch(['src/app/**/*.js', 'src/**/*.html'], function() {
     return runSequence('javascript', 'integrate-test');
   });
-  gulp.watch(['src/assets/**','src/**/*.html'], function() {
+  gulp.watch(['src/assets/**'], function() {
     return runSequence('assets', 'integrate-test');
   });
 
