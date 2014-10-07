@@ -129,9 +129,17 @@ gulp.task('clean', function(cb) {
 });
 
 gulp.task('integrate', function() {
-  return gulp.src(['dist/*.js', 'dist/css/*.css'])
-    .pipe($.inject('src/index.html', { ignorePath: ['/dist/'], addRootSlash: false }))
+  var target = gulp.src('src/index.html'),
+      source = gulp.src(['dist/*.js', 'dist/css/*.css'], { read: false }),
+      params = { ignorePath: ['/dist/'], addRootSlash: false };
+
+  return target
+    .pipe($.inject(source, params))
     .pipe(gulp.dest('./dist'));
+
+  /*return gulp.src(['dist/*.js', 'dist/css/*.css'])
+    .pipe($.inject('src/index.html', { ignorePath: ['/dist/'], addRootSlash: false }))
+    .pipe(gulp.dest('./dist'));*/
 });
 
 gulp.task('integrate-test', function() {
