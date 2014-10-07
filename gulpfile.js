@@ -111,15 +111,21 @@ gulp.task('stylesheets', function() {
 });
 
 gulp.task('assets', function() {
+
   return gulp.src('src/assets/**')
     .pipe($.cached('assets'))
     .pipe(gulp.dest('dist/assets'));
     // Integration test
 });
 
-gulp.task('clean', function() {
-  return gulp.src(['dist', 'temp'], { read: false })
-    .pipe($.rimraf());
+gulp.task('clean', function(cb) {
+  var del = require('del');
+
+  del([
+    'dist',
+    // here we use a globbing pattern to match everything inside the `mobile` folder
+    'temp'
+  ], cb);
 });
 
 gulp.task('integrate', function() {
