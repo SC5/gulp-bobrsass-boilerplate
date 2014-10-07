@@ -15,11 +15,13 @@ var proxy = httpProxy.createProxyServer({
 /* proxyMiddleware forwards static file requests to BrowserSync server
    and forwards dynamic requests to your real backend */
 function proxyMiddleware(req, res, next) {
-  if (/\.(html|css|map|js|png|jpg|jpeg|gif|ico|xml|rss|txt|eot|svg|ttf|woff)(\?((r|v|rel|rev)=[\-\.\w]*)?)?$/.test(req.url)) {
+  console.log(req.method + " "+ req.url);
+  //if (/\.(html|css|map|js|png|jpg|jpeg|gif|ico|xml|rss|txt|eot|svg|ttf|woff)(\?((r|v|rel|rev)=[\-\.\w]*)?)?$/.test(req.url)) {
     next();
-  } else {
-    proxy.web(req, res);
-  }
+  //} else {
+  //  console.log("PROXY", req.url);
+  //  proxy.web(req, res);
+  //}
 }
 
 function browserSyncInit(baseDir, files, browser) {
@@ -28,8 +30,7 @@ function browserSyncInit(baseDir, files, browser) {
   browserSync.instance = browserSync.init(files, {
     startPath: '/index.html',
     server: {
-      baseDir: baseDir,
-      middleware: proxyMiddleware
+      baseDir: baseDir
     },
     browser: browser
   });
