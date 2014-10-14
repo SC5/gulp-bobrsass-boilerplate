@@ -1,4 +1,11 @@
-angular.module('SC5AngularBoilerplate', [
+require('angular');
+require('angular-route');
+require('angular-resource');
+
+// Created by gulp build from *.html files
+require('templates');
+
+var app = angular.module('SC5AngularBoilerplate', [
     'ngResource',
     'ngRoute',
     'templates'
@@ -7,11 +14,12 @@ angular.module('SC5AngularBoilerplate', [
     console.log('Hello from config');
     $routeProvider.
       when('/', {
-          templateUrl: 'assets/views/main.html'
+          templateUrl: 'pages/main/view.html',
+          controller: require('./pages/main/controller')
       }).
       when('/sample', {
-          templateUrl: 'assets/views/sample.html',
-          controller: 'SampleController'
+          templateUrl: 'pages/sample/view.html',
+          controller: require('./pages/sample/controller')
       }).
       otherwise({
           redirectTo: '/'
@@ -19,3 +27,5 @@ angular.module('SC5AngularBoilerplate', [
 
       $locationProvider.html5Mode(true);
   });
+
+module.exports = app;

@@ -1,13 +1,17 @@
-var path = require('path'),
-    util = require('util'),
-    gulp = require('gulp'),
-    url = require('url'),
-    $ = require('gulp-load-plugins')(),
-    runSequence = require('run-sequence'),
-    bowerFiles = require('main-bower-files'),
-    templateCache = require('gulp-angular-templatecache'),
-    eventStream = require('event-stream'),
-    package = require('./package.json');
+var path = require('path');
+var util = require('util');
+var gulp = require('gulp');
+var bower = require('bower');
+var url = require('url');
+var _ = require('lodash');
+var $ = require('gulp-load-plugins')();
+var runSequence = require('run-sequence');
+var bowerFiles = require('main-bower-files');
+var eventStream = require('event-stream');
+var package = require('./package.json');
+var through = require('through2');
+var browserify = require('browserify');
+
 
 /* Configurations. Note that most of the configuration is stored in
 the task context. These are mainly for repeating configuration items */
@@ -40,7 +44,7 @@ gulp.task('bump', function() {
 });
 
 gulp.task('build', function() {
-  return runSequence(['javascript', 'stylesheets', 'assets'], 'integrate', 'test');
+  return runSequence(['ng-templates', 'javascript', 'stylesheets'], 'integrate', 'test');
 });
 
 /* Serve the web site */
@@ -71,38 +75,88 @@ gulp.task('preprocess', function() {
     .pipe($.jshint.reporter('default'));
 });
 
+gulp.task('ng-templates', function() {
+  return gulp.src('src/app/**/*.html')
+    .pipe($.angularTemplatecache('templates.js', { standalone: true, root: '' }))
+    .pipe(gulp.dest('temp'));
+});
+
+
+function getBowerModules() {
+  var bowerDir = path.join(__dirname, bower.config.directory );
+
+  // Always add ng-templates bundle as shim
+  var shims = {
+    'templates': path.join( __dirname, 'temp', 'templates.js' )
+  };
+
+  // Add all bower package as shims, with package name and it points
+  // to it's main js
+  _.each( bowerFiles(), function(file) {
+    var relativePath = path.relative(bowerDir, file );
+    // Not javascript file
+    if( ! /.*.js$/.test(file) )
+      return;
+
+    // Use replace to get directory name (package name) from path
+    // and if matched to regexp then add it to shims object
+    relativePath.replace(/^(.*)\//, function(match, packageName) {
+      if( packageName )
+        shims[packageName] = file;
+    });
+  });
+
+  return shims;
+}
+
+function browserifyBundle( opts ) {
+  opts = opts || {};
+
+  return through.obj(function(file, encoding, callback) {
+    var bundler = browserify({
+      debug: opts.debug,
+      basedir: path.dirname(file.path),
+      entries: [file.path]
+    });
+
+    _.each(getBowerModules(), function(path, name) {
+      bundler.require(path, { expose: name })
+    })
+
+    _.each(opts.transform, function(tranformation) {
+      bundler.transform(tranformation);
+    });
+
+    var _this = this;
+    bundler.bundle(function(err, src) {
+      file.contents = src;
+      _this.push(file)
+      callback();
+    });
+
+  })
+}
+
+
+
 gulp.task('javascript', ['preprocess'], function() {
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
   var bundleName = util.format('bundle-%s.js', config.version);
 
-  // Note: two pipes get combined together by first
-  // combining components into one bundle, then adding
-  // app sources, and reordering the items. Note that
-  // we expect Angular to be the first item in bower.json
-  // so that component concatenation works
-  var components = gulp.src(bowerFiles())
-    .pipe($.filter('**/*.js'))
-    .pipe($.plumber())
-    .pipe($.concat('components.js'));
-
-  var templates = gulp.src('src/assets/**/*.html')
-    .pipe(templateCache('templates.js', { standalone: true, root: 'assets' }));
-
-  var app = gulp.src('src/app/**/*.js')
-    .pipe($.concat('app.js'));
-
-  return eventStream.merge(components, templates, app)
-    .pipe($.order([
-      '**/components.js',
-      '**/templates.js',
-      '**/app.js'
-    ]))
-    .pipe($.concat(bundleName))
-    .pipe($.if(!config.debug, $.ngmin()))
-    .pipe($.if(!config.debug, $.uglify()))
-    .pipe(gulp.dest('dist'));
+  return gulp.src('src/app/app.js')
+      .pipe(browserifyBundle({
+        debug: true,
+        transform: ['browserify-ngannotate']
+      }))
+      .on('error', $.util.log)
+      .pipe($.sourcemaps.init({loadMaps: true}))
+      .pipe($.concat(bundleName))
+      .pipe($.uglify())
+      .pipe($.sourcemaps.write('./'))
+      .pipe(gulp.dest('dist'));
 });
+
 
 gulp.task('stylesheets', function() {
   // The non-MD5fied prefix, so that we know which version we are actually
@@ -137,20 +191,11 @@ gulp.task('stylesheets', function() {
     .pipe($.if(!config.production, $.csslint.reporter()));
 });
 
-gulp.task('assets', function() {
-
-  return gulp.src('src/assets/**')
-    .pipe($.cached('assets'))
-    .pipe(gulp.dest('dist/assets'));
-    // Integration test
-});
-
 gulp.task('clean', function(cb) {
   var del = require('del');
 
   del([
     'dist',
-    // here we use a globbing pattern to match everything inside the `mobile` folder
     'temp'
   ], cb);
 });
@@ -163,10 +208,6 @@ gulp.task('integrate', function() {
   return target
     .pipe($.inject(source, params))
     .pipe(gulp.dest('./dist'));
-
-  /*return gulp.src(['dist/*.js', 'dist/css/*.css'])
-    .pipe($.inject('src/index.html', { ignorePath: ['/dist/'], addRootSlash: false }))
-    .pipe(gulp.dest('./dist'));*/
 });
 
 gulp.task('integrate-test', function() {
@@ -180,11 +221,9 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
   gulp.watch('src/css/**/*.scss', function() {
     return runSequence('stylesheets', 'integrate-test');
   });
-  gulp.watch(['src/app/**/*.js', 'src/**/*.html'], function() {
-    return runSequence('javascript', 'integrate-test');
-  });
-  gulp.watch(['src/assets/**'], function() {
-    return runSequence('assets', 'integrate-test');
+  gulp.watch(['src/app/**/*.html'], ['ng-templates']);
+  gulp.watch(['src/app/**/*.js', 'temp/templates.js'], function() {
+    return runSequence('javascript', 'integrate', 'integrate-test');
   });
 
   // Watch any changes to the dist directory
