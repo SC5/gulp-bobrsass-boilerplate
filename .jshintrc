@@ -31,5 +31,5 @@
   "smarttabs": true,
   // Imply the angular environment
   "browser": true,
-  "predef": ["require", "module", "console"]
+  "predef": ["require", "module", "console", "angular"]
 }

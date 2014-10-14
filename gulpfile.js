@@ -9,6 +9,9 @@ var runSequence = require('run-sequence');
 var bowerFiles = require('main-bower-files');
 var eventStream = require('event-stream');
 var package = require('./package.json');
+var through = require('through2');
+var browserify = require('browserify');
+
 
 /* Configurations. Note that most of the configuration is stored in
 the task context. These are mainly for repeating configuration items */
@@ -79,18 +82,12 @@ gulp.task('ng-templates', function() {
 });
 
 
-function getJavascriptConfig() {
-  // The non-MD5fied prefix, so that we know which version we are actually
-  // referring to in case of fixing bugs
-  var bundleName = util.format('bundle-%s.js', config.version);
+function getBowerModules() {
   var bowerDir = path.join(__dirname, bower.config.directory );
 
   // Always add ng-templates bundle as shim
   var shims = {
-    'templates': {
-      path: path.join( __dirname, 'temp', 'templates.js' ),
-      exports: 'appTemplates'
-    }
+    'templates': path.join( __dirname, 'temp', 'templates.js' )
   };
 
   // Add all bower package as shims, with package name and it points
@@ -105,34 +102,56 @@ function getJavascriptConfig() {
     // and if matched to regexp then add it to shims object
     relativePath.replace(/^(.*)\//, function(match, packageName) {
       if( packageName )
-        shims[packageName] = {
-          path: file,
-          // Change dash in package name to camel case format
-          exports: packageName.replace(/-(\w)/g, function(all, letter) {
-            return letter.toUpperCase();
-          } )
-        };
+        shims[packageName] = file;
     });
   });
 
-  return {
-    bundleName: bundleName,
-    browserify: {
-      transform: [ 'browserify-ngannotate' ],
-      shim: shims,
-      debug: true
-    }
-  }
+  return shims;
 }
 
+function browserifyBundle( opts ) {
+  opts = opts || {};
+
+  return through.obj(function(file, encoding, callback) {
+    var bundler = browserify({
+      debug: opts.debug,
+      basedir: path.dirname(file.path),
+      entries: [file.path]
+    });
+
+    _.each(getBowerModules(), function(path, name) {
+      bundler.require(path, { expose: name })
+    })
+
+    _.each(opts.transform, function(tranformation) {
+      bundler.transform(tranformation);
+    });
+
+    var _this = this;
+    bundler.bundle(function(err, src) {
+      file.contents = src;
+      _this.push(file)
+      callback();
+    });
+
+  })
+}
+
+
+
 gulp.task('javascript', ['preprocess'], function() {
-  var jsConfig = getJavascriptConfig();
+  // The non-MD5fied prefix, so that we know which version we are actually
+  // referring to in case of fixing bugs
+  var bundleName = util.format('bundle-%s.js', config.version);
 
   return gulp.src('src/app/app.js')
-      .pipe($.browserify(jsConfig.browserify))
+      .pipe(browserifyBundle({
+        debug: true,
+        transform: ['browserify-ngannotate']
+      }))
       .on('error', $.util.log)
       .pipe($.sourcemaps.init({loadMaps: true}))
-      .pipe($.concat(jsConfig.bundleName))
+      .pipe($.concat(bundleName))
       .pipe($.uglify())
       .pipe($.sourcemaps.write('./'))
       .pipe(gulp.dest('dist'));
