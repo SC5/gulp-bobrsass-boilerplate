@@ -1,13 +1,14 @@
-var path = require('path'),
-    util = require('util'),
-    gulp = require('gulp'),
-    url = require('url'),
-    $ = require('gulp-load-plugins')(),
-    runSequence = require('run-sequence'),
-    bowerFiles = require('main-bower-files'),
-    templateCache = require('gulp-angular-templatecache'),
-    eventStream = require('event-stream'),
-    package = require('./package.json');
+var path = require('path');
+var util = require('util');
+var gulp = require('gulp');
+var bower = require('bower');
+var url = require('url');
+var _ = require('lodash');
+var $ = require('gulp-load-plugins')();
+var runSequence = require('run-sequence');
+var bowerFiles = require('main-bower-files');
+var eventStream = require('event-stream');
+var package = require('./package.json');
 
 /* Configurations. Note that most of the configuration is stored in
 the task context. These are mainly for repeating configuration items */
@@ -40,7 +41,7 @@ gulp.task('bump', function() {
 });
 
 gulp.task('build', function() {
-  return runSequence(['javascript', 'stylesheets', 'assets'], 'integrate', 'test');
+  return runSequence(['ng-templates', 'javascript', 'stylesheets'], 'integrate', 'test');
 });
 
 /* Serve the web site */
@@ -71,38 +72,72 @@ gulp.task('preprocess', function() {
     .pipe($.jshint.reporter('default'));
 });
 
-gulp.task('javascript', ['preprocess'], function() {
+gulp.task('ng-templates', function() {
+  return gulp.src('src/app/**/*.html')
+    .pipe($.angularTemplatecache('templates.js', { standalone: true, root: '' }))
+    .pipe(gulp.dest('temp'));
+});
+
+
+function getJavascriptConfig() {
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
   var bundleName = util.format('bundle-%s.js', config.version);
+  var bowerDir = path.join(__dirname, bower.config.directory );
 
-  // Note: two pipes get combined together by first
-  // combining components into one bundle, then adding
-  // app sources, and reordering the items. Note that
-  // we expect Angular to be the first item in bower.json
-  // so that component concatenation works
-  var components = gulp.src(bowerFiles())
-    .pipe($.filter('**/*.js'))
-    .pipe($.plumber())
-    .pipe($.concat('components.js'));
+  // Always add ng-templates bundle as shim
+  var shims = {
+    'templates': {
+      path: path.join( __dirname, 'temp', 'templates.js' ),
+      exports: 'appTemplates'
+    }
+  };
 
-  var templates = gulp.src('src/assets/**/*.html')
-    .pipe(templateCache('templates.js', { standalone: true, root: 'assets' }));
+  // Add all bower package as shims, with package name and it points
+  // to it's main js
+  _.each( bowerFiles(), function(file) {
+    var relativePath = path.relative(bowerDir, file );
+    // Not javascript file
+    if( ! /.*.js$/.test(file) )
+      return;
 
-  var app = gulp.src('src/app/**/*.js')
-    .pipe($.concat('app.js'));
+    // Use replace to get directory name (package name) from path
+    // and if matched to regexp then add it to shims object
+    relativePath.replace(/^(.*)\//, function(match, packageName) {
+      if( packageName )
+        shims[packageName] = {
+          path: file,
+          // Change dash in package name to camel case format
+          exports: packageName.replace(/-(\w)/g, function(all, letter) {
+            return letter.toUpperCase();
+          } )
+        };
+    });
+  });
 
-  return eventStream.merge(components, templates, app)
-    .pipe($.order([
-      '**/components.js',
-      '**/templates.js',
-      '**/app.js'
-    ]))
-    .pipe($.concat(bundleName))
-    .pipe($.if(!config.debug, $.ngmin()))
-    .pipe($.if(!config.debug, $.uglify()))
-    .pipe(gulp.dest('dist'));
+  return {
+    bundleName: bundleName,
+    browserify: {
+      transform: [ 'browserify-ngannotate' ],
+      shim: shims,
+      debug: true
+    }
+  }
+}
+
+gulp.task('javascript', ['preprocess'], function() {
+  var jsConfig = getJavascriptConfig();
+
+  return gulp.src('src/app/app.js')
+      .pipe($.browserify(jsConfig.browserify))
+      .on('error', $.util.log)
+      .pipe($.sourcemaps.init({loadMaps: true}))
+      .pipe($.concat(jsConfig.bundleName))
+      .pipe($.uglify())
+      .pipe($.sourcemaps.write('./'))
+      .pipe(gulp.dest('dist'));
 });
+
 
 gulp.task('stylesheets', function() {
   // The non-MD5fied prefix, so that we know which version we are actually
@@ -137,20 +172,11 @@ gulp.task('stylesheets', function() {
     .pipe($.if(!config.production, $.csslint.reporter()));
 });
 
-gulp.task('assets', function() {
-
-  return gulp.src('src/assets/**')
-    .pipe($.cached('assets'))
-    .pipe(gulp.dest('dist/assets'));
-    // Integration test
-});
-
 gulp.task('clean', function(cb) {
   var del = require('del');
 
   del([
     'dist',
-    // here we use a globbing pattern to match everything inside the `mobile` folder
     'temp'
   ], cb);
 });
@@ -163,10 +189,6 @@ gulp.task('integrate', function() {
   return target
     .pipe($.inject(source, params))
     .pipe(gulp.dest('./dist'));
-
-  /*return gulp.src(['dist/*.js', 'dist/css/*.css'])
-    .pipe($.inject('src/index.html', { ignorePath: ['/dist/'], addRootSlash: false }))
-    .pipe(gulp.dest('./dist'));*/
 });
 
 gulp.task('integrate-test', function() {
@@ -180,11 +202,9 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
   gulp.watch('src/css/**/*.scss', function() {
     return runSequence('stylesheets', 'integrate-test');
   });
-  gulp.watch(['src/app/**/*.js', 'src/**/*.html'], function() {
-    return runSequence('javascript', 'integrate-test');
-  });
-  gulp.watch(['src/assets/**'], function() {
-    return runSequence('assets', 'integrate-test');
+  gulp.watch(['src/app/**/*.html'], ['ng-templates']);
+  gulp.watch(['src/app/**/*.js', 'temp/templates.js'], function() {
+    return runSequence('javascript', 'integrate', 'integrate-test');
   });
 
   // Watch any changes to the dist directory

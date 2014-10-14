@@ -6,5 +6,10 @@
     "angular-resource": "~1.3.0",
     "angular-route": "~1.3.0"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "overrides": {
+    "angular": {
+      "main": ["./angular.js", "./angular-csp.css"]
+    }
+  }
 }
