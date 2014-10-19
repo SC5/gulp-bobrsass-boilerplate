@@ -1,3 +1,8 @@
+'use strict';
+// Supress warnings on node.js globals & $.if 
+/* jshint -W024 */
+/* global process, require, __dirname */
+
 var path = require('path'),
     util = require('util'),
     gulp = require('gulp'),
@@ -5,14 +10,13 @@ var path = require('path'),
     $ = require('gulp-load-plugins')(),
     runSequence = require('run-sequence'),
     bowerFiles = require('main-bower-files'),
-    templateCache = require('gulp-angular-templatecache'),
     eventStream = require('event-stream'),
-    package = require('./package.json');
+    pkg = require('./package.json');
 
 /* Configurations. Note that most of the configuration is stored in
 the task context. These are mainly for repeating configuration items */
 var config = {
-    version: package.version,
+    version: pkg.version,
     debug: Boolean($.util.env.debug),
     production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
   },
@@ -87,7 +91,7 @@ gulp.task('javascript', ['preprocess'], function() {
     .pipe($.concat('components.js'));
 
   var templates = gulp.src('src/assets/**/*.html')
-    .pipe(templateCache('templates.js', { standalone: true, root: 'assets' }));
+    .pipe($.angularTemplatecache('templates.js', { standalone: true, root: 'assets' }));
 
   var app = gulp.src('src/app/**/*.js')
     .pipe($.concat('app.js'));
@@ -99,7 +103,7 @@ gulp.task('javascript', ['preprocess'], function() {
       '**/app.js'
     ]))
     .pipe($.concat(bundleName))
-    .pipe($.if(!config.debug, $.ngmin()))
+    .pipe($.if(!config.debug, $.ngAnnotate()))
     .pipe($.if(!config.debug, $.uglify()))
     .pipe(gulp.dest('dist'));
 });
@@ -196,8 +200,8 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
   });
 });
 
-gulp.task('test-setup', function(cb) {
-  var cmdAndArgs = package.scripts.start.split(/\s/),
+gulp.task('test-setup', function() {
+  var cmdAndArgs = pkg.scripts.start.split(/\s/),
       cmdPath = path.dirname(require.resolve('phantomjs')),
       cmd = path.resolve(cmdPath, require(path.join(cmdPath, 'location')).location),
       exec = require('exec-wait'),
@@ -229,17 +233,17 @@ gulp.task('test-setup', function(cb) {
           .then(testServer.stop)
           .then(function() {
             process.exit();
-          })
+          });
       });
       return Promise.resolve();
     });
-})
+});
 
 gulp.task('test-run', function() {
   var Promise = require('bluebird');
   $.util.log('Running protractor');
 
-  return new Promise(function(resolve, reject) {
+  return new Promise(function(resolve) {
     gulp.src(['tests/*.js'])
     .pipe($.plumber())
     .pipe($.protractor.protractor({
@@ -252,14 +256,14 @@ gulp.task('test-run', function() {
     })
     .on('error', function() {
       resolve();
-    })
+    });
   });
 });
 
 gulp.task('test-teardown', function() {
   return ghostDriver.stop()
     .then(testServer.stop);
-})
+});
 
 gulp.task('test', function() {
   return runSequence('test-setup', 'test-run', 'test-teardown');
