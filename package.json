@@ -43,6 +43,7 @@
     "git-hooks": "0.0.7",
     "gulp-bump": "^0.1.11",
     "gulp-jscs": "^1.1.2",
+    "gulp-plumber": "^0.6.6",
     "gulp-protractor": "0.0.11",
     "jscs": "^1.6.2",
     "phantomjs": "^1.9.10",

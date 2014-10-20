@@ -6,6 +6,6 @@
 
   "excludeFiles": [
     "node_modules/**",
-    "gulpfile.js"
+    "*.js"
   ]
 }
