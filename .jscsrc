@@ -2,5 +2,10 @@
   "preset": "airbnb",
 
   "validateIndentation": 2,
-  "requireMultipleVarDecl": true
+  "requireMultipleVarDecl": true,
+
+  "excludeFiles": [
+    "node_modules/**",
+    "gulpfile.js"
+  ]
 }
