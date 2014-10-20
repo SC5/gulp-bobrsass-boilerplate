@@ -87,24 +87,25 @@ gulp.task('javascript', ['preprocess'], function() {
   // so that component concatenation works
   var components = gulp.src(bowerFiles())
     .pipe($.filter('**/*.js'))
-    .pipe($.plumber())
-    .pipe($.concat('components.js'));
+    .pipe($.plumber());
 
-  var templates = gulp.src('src/assets/**/*.html')
+  var templates = gulp.src('src/**/*.html')
     .pipe($.angularTemplatecache('templates.js', { standalone: true, root: 'assets' }));
 
-  var app = gulp.src('src/app/**/*.js')
-    .pipe($.concat('app.js'));
+  var app = gulp.src('src/app/**/*.js');
 
   return eventStream.merge(components, templates, app)
     .pipe($.order([
-      '**/components.js',
-      '**/templates.js',
-      '**/app.js'
-    ]))
+      'components/angular/angular.js',
+      'components/**/*.js',
+      'templates.js',
+      'app/**/*.js'
+    ], { base: path.join(__dirname, 'src') }))
+    .pipe($.if(config.debug, $.sourcemaps.init()))
     .pipe($.concat(bundleName))
     .pipe($.if(!config.debug, $.ngAnnotate()))
     .pipe($.if(!config.debug, $.uglify()))
+    .pipe($.if(config.debug, $.sourcemaps.write()))
     .pipe(gulp.dest('dist'));
 });
 
@@ -125,7 +126,8 @@ gulp.task('stylesheets', function() {
     .pipe($.compass({
       project: path.join(__dirname, 'src'),
       sass: 'css',
-      css: '../temp/css'
+      css: '../temp/css',
+      sourcemap: true
     }))
     .pipe($.concat('app.css'));
 
@@ -167,10 +169,6 @@ gulp.task('integrate', function() {
   return target
     .pipe($.inject(source, params))
     .pipe(gulp.dest('./dist'));
-
-  /*return gulp.src(['dist/*.js', 'dist/css/*.css'])
-    .pipe($.inject('src/index.html', { ignorePath: ['/dist/'], addRootSlash: false }))
-    .pipe(gulp.dest('./dist'));*/
 });
 
 gulp.task('integrate-test', function() {
