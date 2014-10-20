@@ -5,7 +5,6 @@ var path = require('path'),
     gulp = require('gulp'),
     jscs = require('gulp-jscs'),
     $ = require('gulp-load-plugins')(),
-    plumber = require('gulp-plumber'),
     runSequence = require('run-sequence'),
     bowerFiles = require('main-bower-files'),
     eventStream = require('event-stream'),
@@ -53,7 +52,7 @@ gulp.task('serve', $.serve({
 
 gulp.task('jscs', function(){
     return gulp.src(['src/app/**/*.js'])
-        .pipe(plumber())
+        .pipe($.plumber())
         .pipe(jscs());
 });
 
@@ -160,14 +159,11 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
     return runSequence('stylesheets', 'integrate-test');
   });
   gulp.watch('src/app/**/*.js', function() {
+    gulp.start('jscs');
     return runSequence('javascript', 'integrate-test');
   });
   gulp.watch(['src/assets/**','src/**/*.html'], function() {
     return runSequence('assets', 'integrate-test');
-  });
-
-  gulp.watch(['src/app/**/*.js'], function(){
-    gulp.start('jscs');
   });
 
   // Watch any changes to the dist directory
