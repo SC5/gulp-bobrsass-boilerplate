@@ -3,7 +3,6 @@
 var path = require('path'),
     util = require('util'),
     gulp = require('gulp'),
-    jscs = require('gulp-jscs'),
     $ = require('gulp-load-plugins')(),
     runSequence = require('run-sequence'),
     bowerFiles = require('main-bower-files'),
@@ -53,7 +52,7 @@ gulp.task('serve', $.serve({
 gulp.task('jscs', function(){
     return gulp.src(['src/app/**/*.js'])
         .pipe($.plumber())
-        .pipe(jscs());
+        .pipe($.jscs());
 });
 
 gulp.task('preprocess', function() {
