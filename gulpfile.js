@@ -3,7 +3,6 @@
 var path = require('path'),
     util = require('util'),
     gulp = require('gulp'),
-    jscs = require('gulp-jscs'),
     $ = require('gulp-load-plugins')(),
     runSequence = require('run-sequence'),
     bowerFiles = require('main-bower-files'),
@@ -52,7 +51,8 @@ gulp.task('serve', $.serve({
 
 gulp.task('jscs', function(){
     return gulp.src(['src/app/**/*.js'])
-        .pipe(jscs());
+        .pipe($.plumber())
+        .pipe($.jscs());
 });
 
 gulp.task('preprocess', function() {
@@ -158,6 +158,7 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
     return runSequence('stylesheets', 'integrate-test');
   });
   gulp.watch('src/app/**/*.js', function() {
+    gulp.start('jscs');
     return runSequence('javascript', 'integrate-test');
   });
   gulp.watch(['src/assets/**','src/**/*.html'], function() {
