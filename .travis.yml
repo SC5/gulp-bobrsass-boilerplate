@@ -9,5 +9,5 @@ before_install:
   - gem install compass --version "=1.0.1"
 
 env:
-  - NODE_ENV="production"
   - NODE_ENV="development"
+  - NODE_ENV="production"

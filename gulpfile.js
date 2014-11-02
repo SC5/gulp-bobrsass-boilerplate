@@ -14,7 +14,7 @@ the task context. These are mainly for repeating configuration items */
 // jscs:disable requireMultipleVarDecl
 var config = {
     version: pkg.version,
-    debug: Boolean($.util.env.debug),
+    debug: Boolean($.util.env.debug) || (process.env.NODE_ENV === 'development'),
     production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
   },
   // Global vars used across the test tasks
@@ -248,7 +248,12 @@ gulp.task('test-teardown', function() {
 });
 
 gulp.task('test', function() {
-  return runSequence('test-setup', 'test-run', 'test-teardown');
+  if (!config.production) {
+    return runSequence('test-setup', 'test-run', 'test-teardown');
+  }
+  else {
+    $.util.log('Tests disabled in production mode for more lightweight build.')
+  }
 });
 
 gulp.task('default', ['jscs', 'build']);
