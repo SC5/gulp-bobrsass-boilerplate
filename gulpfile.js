@@ -11,6 +11,7 @@ var path = require('path'),
 
 /* Configurations. Note that most of the configuration is stored in
 the task context. These are mainly for repeating configuration items */
+// jscs:disable requireMultipleVarDecl
 var config = {
     version: pkg.version,
     debug: Boolean($.util.env.debug),
@@ -18,6 +19,7 @@ var config = {
   },
   // Global vars used across the test tasks
   ghostDriver, testServer;
+// jscs:enable requireMultipleVarDecl
 
 // Package management
 /* Install & update Bower dependencies */
@@ -49,10 +51,10 @@ gulp.task('serve', $.serve({
   port: 8080
 }));
 
-gulp.task('jscs', function(){
-    return gulp.src(['src/app/**/*.js'])
-        .pipe($.plumber())
-        .pipe($.jscs());
+gulp.task('jscs', function() {
+  return gulp.src(['src/app/**/*.js'])
+    .pipe($.plumber())
+    .pipe($.jscs());
 });
 
 gulp.task('preprocess', function() {
@@ -86,6 +88,7 @@ gulp.task('javascript', ['preprocess'], function() {
 });
 
 gulp.task('stylesheets', function() {
+  //jscs:disable requireMultipleVarDecl
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
   var bundleName = util.format('styles-%s.css', config.version);
@@ -99,12 +102,14 @@ gulp.task('stylesheets', function() {
 
   var app = gulp.src('src/css/styles.scss')
     .pipe($.plumber())
+    .pipe($.if(config.debug, $.sourcemaps.init()))
     .pipe($.compass({
-      project: path.join(__dirname, 'src'),
-      sass: 'css',
-      css: '../temp/css'
+      project: __dirname,
+      sass: 'src/css',
+      css: 'temp/css'
     }))
     .pipe($.concat('app.css'));
+  //jscs:enable requireMultipleVarDecl
 
   return eventStream.merge(components, app)
     .pipe($.order([
@@ -113,6 +118,9 @@ gulp.task('stylesheets', function() {
     ]))
     .pipe($.concat(bundleName))
     .pipe($.if(!config.debug, $.csso()))
+    .pipe($.if(config.debug,
+      $.sourcemaps.write({ sourceRoot: path.join(__dirname, 'src/css') }))
+    )
     .pipe(gulp.dest('dist/css'))
     .pipe($.if(!config.production, $.csslint()))
     .pipe($.if(!config.production, $.csslint.reporter()));
@@ -161,7 +169,7 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
     gulp.start('jscs');
     return runSequence('javascript', 'integrate-test');
   });
-  gulp.watch(['src/assets/**','src/**/*.html'], function() {
+  gulp.watch(['src/assets/**', 'src/**/*.html'], function() {
     return runSequence('assets', 'integrate-test');
   });
 
