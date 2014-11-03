@@ -2,6 +2,7 @@ temp
 dist
 node_modules
 src/components
-src/.sass-cache
+.sass-cache
 phantomjs.log
 *.sublime-*
+npm-debug.log
