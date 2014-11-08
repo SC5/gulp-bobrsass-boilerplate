@@ -1,5 +1,5 @@
 'use strict';
-// Supress warnings on node.js globals & $.if 
+// Supress warnings on node.js globals & $.if
 /* jshint -W024 */
 /* global process, require, __dirname */
 
@@ -15,13 +15,15 @@ var path = require('path'),
 
 /* Configurations. Note that most of the configuration is stored in
 the task context. These are mainly for repeating configuration items */
+// jscs:disable requireMultipleVarDecl
 var config = {
     version: pkg.version,
-    debug: Boolean($.util.env.debug),
+    debug: Boolean($.util.env.debug) || (process.env.NODE_ENV === 'development'),
     production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
   },
   // Global vars used across the test tasks
   ghostDriver, testServer;
+// jscs:enable requireMultipleVarDecl
 
 // Package management
 /* Install & update Bower dependencies */
@@ -52,10 +54,9 @@ gulp.task('serve', $.serve({
   root: 'dist',
   port: 8080,
   middleware: function(req, res, next) {
-    var u = url.parse(req.url);
-
-    // Rewrite urls of form 'main' & 'sample' to blank
-    var rule = /^\/(main|sample)/;
+    var u = url.parse(req.url),
+        // Rewrite urls of form 'main' & 'sample' to blank
+        rule = /^\/(main|sample)/;
 
     if (u.pathname.match(rule)) {
       u.pathname = u.pathname.replace(rule, '');
@@ -68,6 +69,12 @@ gulp.task('serve', $.serve({
   }
 }));
 
+gulp.task('jscs', function() {
+  return gulp.src(['src/app/**/*.js'])
+    .pipe($.plumber())
+    .pipe($.jscs());
+});
+
 gulp.task('preprocess', function() {
   return gulp.src('src/app/**/*.js')
     .pipe($.cached('jslint'))
@@ -78,6 +85,7 @@ gulp.task('preprocess', function() {
 gulp.task('javascript', ['preprocess'], function() {
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
+  // jscs:disable requireMultipleVarDecl
   var bundleName = util.format('bundle-%s.js', config.version);
 
   // Note: two pipes get combined together by first
@@ -93,6 +101,7 @@ gulp.task('javascript', ['preprocess'], function() {
     .pipe($.angularTemplatecache('templates.js', { standalone: true, root: 'assets' }));
 
   var app = gulp.src('src/app/**/*.js');
+  // jscs:enable requireMultipleVarDecl
 
   return eventStream.merge(components, templates, app)
     .pipe($.order([
@@ -110,6 +119,7 @@ gulp.task('javascript', ['preprocess'], function() {
 });
 
 gulp.task('stylesheets', function() {
+  //jscs:disable requireMultipleVarDecl
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
   var bundleName = util.format('styles-%s.css', config.version);
@@ -123,6 +133,7 @@ gulp.task('stylesheets', function() {
 
   var app = gulp.src('src/css/styles.scss')
     .pipe($.plumber())
+    .pipe($.if(config.debug, $.sourcemaps.init()))
     .pipe($.compass({
       project: path.join(__dirname, 'src'),
       sass: 'css',
@@ -130,6 +141,7 @@ gulp.task('stylesheets', function() {
       sourcemap: true
     }))
     .pipe($.concat('app.css'));
+  //jscs:enable requireMultipleVarDecl
 
   return eventStream.merge(components, app)
     .pipe($.order([
@@ -138,6 +150,9 @@ gulp.task('stylesheets', function() {
     ]))
     .pipe($.concat(bundleName))
     .pipe($.if(!config.debug, $.csso()))
+    .pipe($.if(config.debug,
+      $.sourcemaps.write({ sourceRoot: path.join(__dirname, 'src/css') }))
+    )
     .pipe(gulp.dest('dist/css'))
     .pipe($.if(!config.production, $.csslint()))
     .pipe($.if(!config.production, $.csslint.reporter()));
@@ -182,10 +197,11 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
   gulp.watch('src/css/**/*.scss', function() {
     return runSequence('stylesheets', 'integrate-test');
   });
-  gulp.watch(['src/app/**/*.js', 'src/**/*.html'], function() {
+  gulp.watch('src/app/**/*.js', function() {
+    gulp.start('jscs');
     return runSequence('javascript', 'integrate-test');
   });
-  gulp.watch(['src/assets/**'], function() {
+  gulp.watch(['src/assets/**', 'src/**/*.html'], function() {
     return runSequence('assets', 'integrate-test');
   });
 
@@ -264,7 +280,12 @@ gulp.task('test-teardown', function() {
 });
 
 gulp.task('test', function() {
-  return runSequence('test-setup', 'test-run', 'test-teardown');
+  if (!config.production) {
+    return runSequence('test-setup', 'test-run', 'test-teardown');
+  }
+  else {
+    $.util.log('Tests disabled in production mode for more lightweight build.')
+  }
 });
 
-gulp.task('default', ['build']);
+gulp.task('default', ['jscs', 'build']);
