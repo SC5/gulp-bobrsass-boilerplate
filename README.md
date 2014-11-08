@@ -20,9 +20,13 @@ been cast as follows:
 
 ## Installation
 
+### Requirements
+
+The latest version of BoBrSASS should work on latest stable version of its depedencies. An older version of BoBrSASS might work with an earlier version of
+libraries, but we do not actively maintain older configurations. The current versions we test against are documented in our [Travis configuration](https://github.com/SC5/gulp-bobrsass-boilerplate/blob/master/.travis.yml).
+
 If you don't already have node.js 0.10.x or later, fetch it from
-[nodejs.org](http://www.nodejs.org/). In addition we need a few dependencies
-you may have.
+[nodejs.org](http://www.nodejs.org/). You will also need gulp to facilitate builds:
 
     > npm install -g gulp
 
@@ -39,8 +43,8 @@ You will also need [Git](http://git-scm.com/).  When installing
 [Git on Windows](http://msysgit.github.io/), remember to enable usage
 from command prompt.
 
-Installing the project itself is easy. Both build system dependencies and app dependencies are
-triggered by
+Installing the project itself is easy. Both build system dependencies and app
+dependencies are triggered by
 
     > npm install
 
@@ -98,8 +102,8 @@ and use it in browser URL
     > docker ps
     # --> http://localhost:49164/
 
-Localhost works in Linux environment, but if you are using boot2docker, you need to use VM IP instead.
-Check the IP and replace `localhost` with it:
+Localhost works in Linux environment, but if you are using boot2docker, you need to use VM IP
+instead. Check the IP and replace `localhost` with it:
 
     > boot2docker ip
     # --> http://192.168.59.103:49164/
@@ -183,6 +187,7 @@ Or in debug mode with chromedriver in a browser:
 * 2014/05/09 - v0.3.0 - Add Protractor test framework, update README
 * 2014/05/14 - v0.3.1 - Better linting
 * 2014/08/01 - v0.4.0 - Clear separation of dev. and product dependencies
+* 2014/10/20 - v0.5.0 - Migrate to Compass 1.0.1, sourcemaps, better linting, updated deps
 
 ## License
 
