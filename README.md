@@ -26,16 +26,13 @@ The latest version of BoBrSASS should work on latest stable version of its deped
 libraries, but we do not actively maintain older configurations. The current versions we test against are documented in our [Travis configuration](https://github.com/SC5/gulp-bobrsass-boilerplate/blob/master/.travis.yml).
 
 If you don't already have node.js 0.10.x or later, fetch it from
-[nodejs.org](http://www.nodejs.org/). You will also need gulp to facilitate builds:
+[nodejs.org](http://www.nodejs.org/).
 
-    > npm install -g gulp
-
-In addition, you will need [Ruby](https://www.ruby-lang.org/en/downloads/) to use
+You will need [Ruby](https://www.ruby-lang.org/en/downloads/) to use
 Compass framework for compiling SASS stylesheets into CSS and sprite sheets:
 
     > gem update --system
-    > gem install sass
-    > gem install compass
+    > gem install sass compass
 
 Note that you may need to first uninstall other SASS versions than (3.2.x).
 
