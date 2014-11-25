@@ -100,13 +100,13 @@ gulp.task('stylesheets', function() {
     .pipe($.filter(['**/*.css', '**/*.scss']))
     .pipe($.concat('components.css'));
 
-  var app = gulp.src('src/css/styles.scss')
+  var app = gulp.src('src/styles/styles.scss')
     .pipe($.plumber())
     .pipe($.if(config.debug, $.sourcemaps.init()))
     .pipe($.compass({
       project: __dirname,
-      sass: 'src/css',
-      css: 'temp/css'
+      sass: 'src/styles',
+      css: 'temp/styles'
     }))
     .pipe($.concat('app.css'));
   //jscs:enable requireMultipleVarDecl
@@ -119,9 +119,9 @@ gulp.task('stylesheets', function() {
     .pipe($.concat(bundleName))
     .pipe($.if(!config.debug, $.csso()))
     .pipe($.if(config.debug,
-      $.sourcemaps.write({ sourceRoot: path.join(__dirname, 'src/css') }))
+      $.sourcemaps.write({ sourceRoot: path.join(__dirname, 'src/styles') }))
     )
-    .pipe(gulp.dest('dist/css'))
+    .pipe(gulp.dest('dist/styles'))
     .pipe($.if(!config.production, $.csslint()))
     .pipe($.if(!config.production, $.csslint.reporter()));
 });
@@ -146,7 +146,7 @@ gulp.task('clean', function(cb) {
 
 gulp.task('integrate', function() {
   var target = gulp.src('src/index.html'),
-      source = gulp.src(['dist/*.js', 'dist/css/*.css'], { read: false }),
+      source = gulp.src(['dist/*.js', 'dist/styles/*.css'], { read: false }),
       params = { ignorePath: ['/dist/'], addRootSlash: false };
 
   return target
@@ -162,7 +162,7 @@ gulp.task('watch', ['integrate', 'test-setup'], function() {
   var browserSync = require('browser-sync');
 
   // Compose several watch streams, each resulting in their own pipe
-  gulp.watch('src/css/**/*.scss', function() {
+  gulp.watch('src/styles/**/*.scss', function() {
     return runSequence('stylesheets', 'integrate-test');
   });
   gulp.watch('src/app/**/*.js', function() {
