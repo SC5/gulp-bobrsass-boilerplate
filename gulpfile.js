@@ -3,6 +3,7 @@
 var path = require('path'),
     util = require('util'),
     gulp = require('gulp'),
+    exec = require('exec-wait'),
     $ = require('gulp-load-plugins')(),
     runSequence = require('run-sequence'),
     bowerFiles = require('main-bower-files'),
@@ -18,7 +19,24 @@ var config = {
     production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
   },
   // Global vars used across the test tasks
-  ghostDriver, testServer;
+  testServerCmdAndArgs = pkg.scripts.start.split(/\s/),
+  phantomPath = path.dirname(require.resolve('phantomjs')),
+  phantomCmd = path.resolve(phantomPath, require(path.join(phantomPath, 'location')).location),
+  ghostDriver = exec({
+    name: 'Ghostdriver',
+    cmd: phantomCmd,
+    args: ['--webdriver=4444', '--ignore-ssl-errors=true'],
+    monitor: { stdout: 'GhostDriver - Main - running on port 4444' },
+    log: $.util.log
+  }),
+  testServer = exec({
+    name: 'Test server',
+    cmd: testServerCmdAndArgs[0] + (process.platform === 'win32' ? '.cmd' : ''),
+    args: testServerCmdAndArgs.slice(1),
+    monitor: { url: 'http://localhost:8080/', checkHTTPResponse: false },
+    log: $.util.log,
+    stopSignal: 'SIGTERM'
+  });
 // jscs:enable requireMultipleVarDecl
 
 // Package management
@@ -27,6 +45,16 @@ gulp.task('install', function() {
   // FIXME specifying the component directory broken in gulp
   // For now, use .bowerrc; No need for piping, either
   $.bower();
+});
+
+gulp.task('clean', function(cb) {
+  var del = require('del');
+
+  del([
+    'dist',
+    // here we use a globbing pattern to match everything inside the `mobile` folder
+    'temp'
+  ], cb);
 });
 
 /* Bump version number for package.json & bower.json */
@@ -41,10 +69,6 @@ gulp.task('bump', function() {
     .pipe(gulp.dest('./'));
 });
 
-gulp.task('build', function() {
-  return runSequence(['javascript', 'stylesheets', 'assets'], 'integrate', 'test');
-});
-
 /* Serve the web site */
 gulp.task('serve', $.serve({
   root: 'dist',
@@ -53,27 +77,27 @@ gulp.task('serve', $.serve({
 
 gulp.task('jscs', function() {
   return gulp.src(['src/app/**/*.js'])
+    .pipe($.cached('jscs'))
     .pipe($.plumber())
     .pipe($.jscs());
 });
 
-gulp.task('preprocess', function() {
+gulp.task('jshint', function() {
   return gulp.src('src/app/**/*.js')
     .pipe($.cached('jslint'))
     .pipe($.jshint())
     .pipe($.jshint.reporter('default'));
 });
 
-gulp.task('javascript', ['preprocess'], function() {
+gulp.task('javascript', function() {
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
   var bundleName = util.format('bundle-%s.js', config.version),
-      componentsPath = 'src/components',
       browserifyConfig = {
         debug: config.debug,
         shim: {
           jquery: {
-            path: path.join(componentsPath, 'jquery/dist/jquery.js'),
+            path: 'src/components/jquery/dist/jquery.js',
             exports: 'jQuery'
           }
         }
@@ -97,7 +121,7 @@ gulp.task('stylesheets', function() {
   // components bundle. Then append them to our own sources, and
   // throw them all through Compass
   var components = gulp.src(bowerFiles())
-    .pipe($.filter(['**/*.css', '**/*.scss']))
+    .pipe($.filter(['**/*.css']))
     .pipe($.concat('components.css'));
 
   var app = gulp.src('src/styles/styles.scss')
@@ -127,21 +151,10 @@ gulp.task('stylesheets', function() {
 });
 
 gulp.task('assets', function() {
-
   return gulp.src('src/assets/**')
     .pipe($.cached('assets'))
     .pipe(gulp.dest('dist/assets'));
     // Integration test
-});
-
-gulp.task('clean', function(cb) {
-  var del = require('del');
-
-  del([
-    'dist',
-    // here we use a globbing pattern to match everything inside the `mobile` folder
-    'temp'
-  ], cb);
 });
 
 gulp.task('integrate', function() {
@@ -149,68 +162,57 @@ gulp.task('integrate', function() {
       source = gulp.src(['dist/*.js', 'dist/styles/*.css'], { read: false }),
       params = { ignorePath: ['/dist/'], addRootSlash: false };
 
+  // Check whether to run tests as part of integration
   return target
     .pipe($.inject(source, params))
     .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('integrate-test', function() {
-  return runSequence('integrate', 'test-run');
-});
+gulp.task('watch', ['build'], function() {
+  var browserSync = require('browser-sync'),
+    testOnWatch = Boolean(typeof $.util.env.test === 'undefined' ? false : true),
+    lintOnWatch = Boolean(typeof $.util.env.nolint === 'undefined' ? true :  false);
 
-gulp.task('watch', ['integrate', 'test-setup'], function() {
-  var browserSync = require('browser-sync');
+  // Watch needs a test server to run; start that.
+  testServer.start()
+    .then(function() {
+      if (testOnWatch) {
+        return ghostDriver.start();
+      }
+    })
+    .then(function() {
+      var integrationTasks = ['integrate'].concat((testOnWatch) ? ['test-run'] : []),
+        jsTasks = (lintOnWatch ? ['jshint', 'jscs'] : []).concat(['javascript']);
 
-  // Compose several watch streams, each resulting in their own pipe
-  gulp.watch('src/styles/**/*.scss', function() {
-    return runSequence('stylesheets', 'integrate-test');
-  });
-  gulp.watch('src/app/**/*.js', function() {
-    gulp.start('jscs');
-    return runSequence('javascript', 'integrate-test');
-  });
-  gulp.watch(['src/assets/**', 'src/**/*.html'], function() {
-    return runSequence('assets', 'integrate-test');
-  });
+      // Compose several watch streams, each resulting in their own pipe
+      gulp.watch('src/styles/**/*.scss', ['stylesheets']);
+      gulp.watch('src/app/**/*.js', ['javascript']);
+      gulp.watch(['src/assets/**', 'src/**/*.html'], ['assets']);
 
-  // Watch any changes to the dist directory
-  $.util.log('Initialise BrowserSync on port 8081');
-  browserSync.init({
-    files: 'dist/**/*',
-    proxy: 'localhost:8080',
-    port: 8081
-  });
+      // Watch any changes to the dist directory
+      gulp.watch(['dist/**/*.js', 'dist/**/*.css'], integrationTasks);
+
+      $.util.log('Initialise BrowserSync on port 8081');
+      browserSync.init({
+        files: 'dist/**/*',
+        proxy: 'localhost:8080',
+        port: 8081
+      });
+    });
 });
 
 gulp.task('test-setup', function() {
-  var cmdAndArgs = pkg.scripts.start.split(/\s/),
-      cmdPath = path.dirname(require.resolve('phantomjs')),
-      cmd = path.resolve(cmdPath, require(path.join(cmdPath, 'location')).location),
-      exec = require('exec-wait'),
-      Promise = require('bluebird');
-
-  ghostDriver = exec({
-    name: 'Ghostdriver',
-    cmd: cmd,
-    args: ['--webdriver=4444', '--ignore-ssl-errors=true'],
-    monitor: { stdout: 'GhostDriver - Main - running on port 4444' },
-    log: $.util.log
-  });
-  testServer = exec({
-    name: 'Test server',
-    cmd: cmdAndArgs[0] + (process.platform === 'win32' ? '.cmd' : ''),
-    args: cmdAndArgs.slice(1),
-    monitor: { url: 'http://localhost:8080/', checkHTTPResponse: false },
-    log: $.util.log,
-    stopSignal: 'SIGTERM'
-  });
+  var Promise = require('bluebird');
 
   return testServer.start()
     .then(ghostDriver.start)
     .then(function() {
+      console.log('Servers started');
       // Hookup to keyboard interrupts, so that we will
       // execute teardown prior to exiting
       process.once('SIGINT', function() {
+        console.log('SIGINT received, terminating test servers.');
+
         return ghostDriver.stop()
           .then(testServer.stop)
           .then(function() {
@@ -248,12 +250,12 @@ gulp.task('test-teardown', function() {
 });
 
 gulp.task('test', function() {
-  if (!config.production) {
-    return runSequence('test-setup', 'test-run', 'test-teardown');
-  }
-  else {
-    $.util.log('Tests disabled in production mode for more lightweight build.')
-  }
+  return runSequence('test-setup', 'test-run', 'test-teardown');
 });
 
-gulp.task('default', ['jscs', 'build']);
+// Task combinations
+gulp.task('build', function() {
+  return runSequence(['javascript', 'stylesheets', 'assets'], 'integrate');
+});
+
+gulp.task('default', ['build', 'test']);
