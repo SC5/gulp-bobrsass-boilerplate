@@ -186,7 +186,7 @@ gulp.task('watch', ['build'], function() {
 
       // Compose several watch streams, each resulting in their own pipe
       gulp.watch('src/styles/**/*.scss', ['stylesheets']);
-      gulp.watch('src/app/**/*.js', ['javascript']);
+      gulp.watch('src/app/**/*.js', jsTasks);
       gulp.watch(['src/assets/**', 'src/**/*.html'], ['assets']);
 
       // Watch any changes to the dist directory
