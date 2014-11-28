@@ -207,11 +207,11 @@ gulp.task('test-setup', function() {
   return testServer.start()
     .then(ghostDriver.start)
     .then(function() {
-      console.log('Servers started');
+      $.util.log('Servers started');
       // Hookup to keyboard interrupts, so that we will
       // execute teardown prior to exiting
       process.once('SIGINT', function() {
-        console.log('SIGINT received, terminating test servers.');
+        $.util.log('SIGINT received, terminating test servers.');
 
         return ghostDriver.stop()
           .then(testServer.stop)
