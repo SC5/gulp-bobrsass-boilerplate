@@ -63,7 +63,7 @@ To trigger **debug** build, run gulp with a debug flag
 
     > gulp --debug
 
-To keep gulp running and watch for changes, use a combation of the following flags:
+To keep gulp running and watch for changes, use a combination of the following flags:
 
     > gulp watch --debug # to disable optimisations, turn on debugging
     > gulp watch --test  # to run automated tests

@@ -18,6 +18,10 @@ var config = {
     debug: Boolean($.util.env.debug) || (process.env.NODE_ENV === 'development'),
     production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
   },
+  port = Number(process.env.PORT | 8080),
+  hostName = process.env.HOSTNAME || 'localhost',
+  host = [hostName, port].join(':'),
+  url = ['http://', host, '/'].join(''),
   // Global vars used across the test tasks
   testServerCmdAndArgs = pkg.scripts.start.split(/\s/),
   phantomPath = path.dirname(require.resolve('phantomjs')),
@@ -33,7 +37,7 @@ var config = {
     name: 'Test server',
     cmd: testServerCmdAndArgs[0] + (process.platform === 'win32' ? '.cmd' : ''),
     args: testServerCmdAndArgs.slice(1),
-    monitor: { url: 'http://localhost:8080/', checkHTTPResponse: false },
+    monitor: { url: url, checkHTTPResponse: false },
     log: $.util.log,
     stopSignal: 'SIGTERM'
   });
@@ -72,7 +76,7 @@ gulp.task('bump', function() {
 /* Serve the web site */
 gulp.task('serve', $.serve({
   root: 'dist',
-  port: 8080
+  port: port
 }));
 
 gulp.task('jscs', function() {
@@ -195,7 +199,7 @@ gulp.task('watch', ['build'], function() {
       $.util.log('Initialise BrowserSync on port 8081');
       browserSync.init({
         files: 'dist/**/*',
-        proxy: 'localhost:8080',
+        proxy: host,
         port: 8081
       });
     });
@@ -233,7 +237,7 @@ gulp.task('test-run', function() {
     .pipe($.protractor.protractor({
       configFile: 'protractor.config.js',
       args: ['--seleniumAddress', 'http://localhost:4444/wd/hub',
-             '--baseUrl', 'http://localhost:8080/']
+             '--baseUrl', url]
     }))
     .on('end', function() {
       resolve();
