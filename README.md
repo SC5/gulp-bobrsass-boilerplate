@@ -53,7 +53,7 @@ The current build compiles JS and CSS monoliths for both the debug and release b
 difference is that the debug build supports source maps and is not minified. It should be
 noted that in order to get the tests pass, a server must be running (e.g. by running 'npm start').
 
-To first cleanup your distribution directory and trigger **release** build
+To first cleanup your distribution directory and trigger **release** build (with all the tests etc.)
 
     > gulp clean
     > npm start # in another window
@@ -63,9 +63,11 @@ To trigger **debug** build, run gulp with a debug flag
 
     > gulp --debug
 
-To keep gulp running and watch for changes, use e.g.
+To keep gulp running and watch for changes, use a combation of the following flags:
 
-    > gulp watch --debug
+    > gulp watch --debug # to disable optimisations, turn on debugging
+    > gulp watch --test  # to run automated tests
+    > gulp watch --nolint # to disable linting
 
 To install, build and start everything in production mode (e.g. no devdependencies), do the whole
 shebang as follows:
