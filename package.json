@@ -49,8 +49,7 @@
     "jscs": "^1.6.2"
   },
   "scripts": {
-    "install": "gulp install",
-    "build": "gulp build",
+    "prepublish": "gulp prepublish",
     "test": "gulp build test",
     "start": "gulp serve"
   }

@@ -2,6 +2,7 @@ FROM ubuntu:14.04
 ENV PORT 8080
 EXPOSE 8080
 ENV PATH ./node_modules/gulp/bin:$PATH
+ENV NODE_ENV production
 
 # Install apps and dependencies
 # NOTE: These steps depends highly on service in question
