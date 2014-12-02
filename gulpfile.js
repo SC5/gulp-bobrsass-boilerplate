@@ -48,13 +48,13 @@ var config = {
 gulp.task('install', function() {
   // FIXME specifying the component directory broken in gulp
   // For now, use .bowerrc; No need for piping, either
-  $.bower();
+  return $.bower();
 });
 
 gulp.task('clean', function(cb) {
   var del = require('del');
 
-  del([
+  return del([
     'dist',
     // here we use a globbing pattern to match everything inside the `mobile` folder
     'temp'
@@ -68,7 +68,7 @@ gulp.task('bump', function() {
   var env = $.util.env,
       type = (env.major) ? 'major' : (env.patch) ? 'patch' : 'minor';
 
-  gulp.src(['./bower.json', './package.json'])
+  return gulp.src(['./bower.json', './package.json'])
     .pipe($.bump({ type: type }))
     .pipe(gulp.dest('./'));
 });
@@ -178,7 +178,7 @@ gulp.task('watch', ['build'], function() {
     lintOnWatch = Boolean(typeof $.util.env.nolint === 'undefined' ? true :  false);
 
   // Watch needs a test server to run; start that.
-  testServer.start()
+  return testServer.start()
     .then(function() {
       if (testOnWatch) {
         return ghostDriver.start();
@@ -260,6 +260,10 @@ gulp.task('test', function() {
 // Task combinations
 gulp.task('build', function() {
   return runSequence(['javascript', 'stylesheets', 'assets'], 'integrate');
+});
+
+gulp.task('prepublish', function() {
+  return runSequence('install', 'build', 'test');
 });
 
 gulp.task('default', ['build', 'test']);
