@@ -18,7 +18,7 @@ var config = {
     debug: Boolean($.util.env.debug) || (process.env.NODE_ENV === 'development'),
     production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
   },
-  port = Number(process.env.PORT | 8080),
+  port = Number(process.env.PORT || 8080),
   hostName = process.env.HOSTNAME || 'localhost',
   host = [hostName, port].join(':'),
   url = ['http://', host, '/'].join(''),
