@@ -39,6 +39,10 @@ Compass framework for compiling SASS stylesheets into CSS and sprite sheets:
 
 Note that you may need to first uninstall other SASS versions than (3.2.x).
 
+If you have persistent problems with the Gulp build not finishing (e.g. there is a
+stuck ruby process running at 100% CPU), try upgrading your Ruby to a fresh install.
+Known to work combination: Ruby 2.1.4, SASS 3.4.9, Compass 1.0.1.
+
 You will also need [Git](http://git-scm.com/).  When installing
 [Git on Windows](http://msysgit.github.io/), remember to enable usage
 from command prompt.
