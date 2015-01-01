@@ -1,62 +1,44 @@
 # Gulp BoBrSASS Boilerplate
 [![Build Status](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)
 
-Gulp BoBrSASS Boilerplate is an evolutionary step from our earlier
-[Grunt BoReLESS Boilerplate](https://github.com/SC5/grunt-boreless-boilerplate?source=cc).
-It aims to cover the same needs, but at the same time remove some of the annoyances we have
-encountered:
-* Faster builds
+In principle BoBrSASS is a modifiable boilerplate that combines some of our best practices:
+* Gulp for fast builds
 * Runs in background (watching changes), supports live reload
 * Supports source maps for both JavaScript and SASS
-* Scriptless, NPM driven deployments (to ease e.g. AWS OpsWorks & Windows deployments)
 * Browserify (or in future something else) for better web app packaging
-
-Rather than being fashionably opinionated, for some less significant things a democratic process
-works better (no matter how good or bad the opinions were). Therefore, the majority votes have
-been cast as follows:
 * Spaces instead of tabs
-* SASS & Compass instead of LESS
-* Protractor acceptance tests instead of Karma unit tests
+* SASS & Compass stylesheets
+* Headless protractor acceptance tests
 
 ## Installation
 
-### Requirements
+### Prerequisites
 
-The latest version of BoBrSASS should work on latest stable version of its depedencies. An older version of BoBrSASS might work with an earlier version of
-libraries, but we do not actively maintain older configurations. The current versions we test against are documented in our [Travis configuration](https://github.com/SC5/gulp-bobrsass-boilerplate/blob/master/.travis.yml).
+The latest version of BoBrSASS should work with recent versions of Ruby, SASS, Compass, Git and Gulp. Please check the correct versions, maintained in our [Travis configuration](https://github.com/SC5/gulp-bobrsass-boilerplate/blob/master/.travis.yml). If you insist on using an older version of dependencies, earlier versions of the boilerplate may work.
 
-If you don't already have node.js 0.10.x or later, fetch it from
-[nodejs.org](http://www.nodejs.org/).
+For system level deps, install [Node.js](http://www.nodejs.org/) 0.10 or later and [Ruby](https://www.ruby-lang.org/en/downloads/) 2.1 or later and [Git](http://git-scm.com/). When using [Git on Windows](http://msysgit.github.io/), remember to enable usage from command prompt.
 
-You will need [Ruby](https://www.ruby-lang.org/en/downloads/) to use
-Compass framework for compiling SASS stylesheets into CSS and sprite sheets:
+Install Gulp npm module and Ruby gems for Compass and and SASS as follows:
 
+    > npm install -g gulp 
     > gem update --system
     > gem install sass compass
 
-Note that you may need to first uninstall other SASS versions than (3.2.x).
+Clone the project and trigger installation of the project npm dependencies by
 
-You will also need [Git](http://git-scm.com/).  When installing
-[Git on Windows](http://msysgit.github.io/), remember to enable usage
-from command prompt.
-
-Installing the project itself is easy. Both build system dependencies and app
-dependencies are triggered by
-
+    > git clone https://github.com/SC5/gulp-bobrsass-boilerplate.git
     > npm install
 
 It actually performs a release build, too (to verify that everything is ok).
 
 ## Building
 
-The current build compiles JS and CSS monoliths for both the debug and release builds. The big
-difference is that the debug build supports source maps and is not minified. It should be
-noted that in order to get the tests pass, a server must be running (e.g. by running 'npm start').
+The current build compiles JS and CSS monoliths for both the debug and release builds. The
+difference in debug builds is that they support source maps and are not minified.
 
 To first cleanup your distribution directory and trigger **release** build (with all the tests etc.)
 
     > gulp clean
-    > npm start # in another window
     > gulp
 
 To trigger **debug** build, run gulp with a debug flag
@@ -85,10 +67,13 @@ To update your package version, you eventually want to do one of the following:
 
 ## Running the Service
 
+### Running the Stub Server
 Most likely the normal *gulp serve* task will not suffice, and you want to run your own test
 server, instead. The task below, will default to 'gulp serve' by default until you change it:
 
     > npm start
+    
+### Running with Docker
 
 Boilerplate also comes with Docker support. To build and run the container, run:
 
@@ -107,7 +92,7 @@ instead. Check the IP and replace `localhost` with it:
     > boot2docker ip
     # --> http://192.168.59.103:49164/
 
-### Live reloading the changes
+### Live Reloading the Changes
 
 Live reloading is enabled when running *gulp watch* in another window. Just change any of your
 JavaScript or SASS files to trigger reload. The reload monitors 'dist' directory and pushes the
@@ -115,7 +100,7 @@ changes as needed.
 
 ##  Extending & Hacking
 
-###  Project layout
+###  Project Layout
 
 #### App
 
@@ -175,8 +160,7 @@ Or in debug mode with chromedriver in a browser:
 
 ## TODO
 
-* SASS source maps
-* Add more examples & documentation
+Plase see project GitHub [issue tracker](https://github.com/SC5/gulp-bobrsass-boilerplate/issues).
 
 ## Release History
 
