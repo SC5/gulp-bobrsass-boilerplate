@@ -1,7 +1,6 @@
 .*
 *.js
 bower.json
-Dockerfile
 src
 temp
 tests

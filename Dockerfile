@@ -15,8 +15,10 @@ USER app
 # Install and package production deps; see the extensive 
 # file ignore list at .dockerignore
 WORKDIR /app
-COPY . /app/
+COPY package.json /app/
+COPY README.md /app/ 
 RUN npm install --production
+COPY . /app
 
 # Use the start script defined in package.json
 CMD [ "npm", "start" ]
