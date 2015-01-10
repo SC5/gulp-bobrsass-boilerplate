@@ -1,26 +1,34 @@
 # Gulp BoBrSASS Boilerplate
 [![Build Status](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)
 
-In principle BoBrSASS is a modifiable boilerplate that combines some of our best practices:
+BoBrSASS is a modifiable boilerplate combining some of our common tools and
+practices:
 * Gulp for fast builds
+* Browserify for bundling CommonJS modules
+* SASS & Compass stylesheets
 * Runs in background (watching changes), supports live reload
 * Supports source maps for both JavaScript and SASS
-* Browserify (or in future something else) for better web app packaging
 * Spaces instead of tabs
-* SASS & Compass stylesheets
 * Headless protractor acceptance tests
 
 ## Installation
 
 ### Prerequisites
 
-The latest version of BoBrSASS should work with recent versions of Ruby, SASS, Compass, Git and Gulp. Please check the correct versions, maintained in our [Travis configuration](https://github.com/SC5/gulp-bobrsass-boilerplate/blob/master/.travis.yml). If you insist on using an older version of dependencies, earlier versions of the boilerplate may work.
+The latest version of BoBrSASS should work with recent versions of Ruby, SASS,
+Compass and Git. Please check the correct versions, maintained in our
+[Travis configuration](https://github.com/SC5/gulp-bobrsass-boilerplate/blob/master/.travis.yml).
+If you insist on using an older version of dependencies, earlier versions of
+the boilerplate may work.
 
-For system level deps, install [Node.js](http://www.nodejs.org/) 0.10 or later and [Ruby](https://www.ruby-lang.org/en/downloads/) 2.1 or later and [Git](http://git-scm.com/). When using [Git on Windows](http://msysgit.github.io/), remember to enable usage from command prompt.
+For system level deps, install [Node.js](http://www.nodejs.org/) 0.10 or
+later and [Ruby](https://www.ruby-lang.org/en/downloads/) 2.1 or later and
+[Git](http://git-scm.com/). When using
+[Git on Windows](http://msysgit.github.io/), remember to enable usage from
+command prompt.
 
-Install Gulp npm module and Ruby gems for Compass and and SASS as follows:
+Install Ruby gems for Compass and and SASS as follows:
 
-    > npm install -g gulp 
     > gem update --system
     > gem install sass compass
 
@@ -29,34 +37,39 @@ Clone the project and trigger installation of the project npm dependencies by
     > git clone https://github.com/SC5/gulp-bobrsass-boilerplate.git
     > npm install
 
-It actually performs a release build, too (to verify that everything is ok).
-
 ## Building
 
-The current build compiles JS and CSS monoliths for both the debug and release builds. The
-difference in debug builds is that they support source maps and are not minified.
+BoBrSASS uses Gulp internally, but you can use npm scripts to trigger them.
+Build, test etc. tasks utilise npm development dependencies, so one should
+set 'NODE_ENV' to something else than 'production' or install the npm
+dependencies with a '--debug' flag. All the development dependencies are moved
+into devDependencies to avoid slow installs of the actual released software.
 
-To first cleanup your distribution directory and trigger **release** build (with all the tests etc.)
+### Debug and Release builds
 
-    > gulp clean
-    > gulp
+    > npm install --debug       # to force development dependencies
+    > npm run build             # to trigger bower install, build and tests
+    > npm run build -- --debug  # to trigger bower install, debug build and tests
 
-To trigger **debug** build, run gulp with a debug flag
+After this you should have a working, tested build in 'dist' directory.
 
-    > gulp --debug
+### Watching for changes
 
-To keep gulp running and watch for changes, use a combination of the following flags:
+To trigger **debug** build or other features, run the build with a combination
+of the following flags:
 
-    > gulp watch --debug # to disable optimisations, turn on debugging
-    > gulp watch --test  # to run automated tests
-    > gulp watch --nolint # to disable linting
+    > npm run watch -- --debug  # to disable optimisations, turn on debugging
+    > npm run watch -- --test   # to turn on tests when building
+    > npm run watch -- --nolint # to disable linting
 
-To install, build and start everything in production mode (e.g. no devdependencies), do the whole
-shebang as follows:
+The above extra flags '-- [--<flag>]' syntax syntax only works for npm 2.0 or
+later. If you have an earlier version of dislike the syntax, trigger the same
+gulp tasks with your local Gulp installation:
 
-    > npm install --production
-    > npm run-script build
-    > npm start
+    > npm install -g gulp       # to install Gulp CLI locally
+    > gulp install
+    > gulp build --debug
+    > gulp watch --debug --test --nolint
 
 To update your package version, you eventually want to do one of the following:
 
@@ -65,26 +78,34 @@ To update your package version, you eventually want to do one of the following:
     > gulp bump --major
     > gulp bump # defaults to minor
 
-## Running the Service
+## Running
 
 ### Running the Stub Server
-Most likely the normal *gulp serve* task will not suffice, and you want to run your own test
-server, instead. The task below, will default to 'gulp serve' by default until you change it:
 
-    > npm start
-    
+The boilerplate includes a minimal stub [Express](http://expressjs.com/) server
+in 'server/' directory. Its primary purpose is testing the frontend as part of
+the build, but nothing blocks you from expanding it into a full-blown server.
+
+    > npm start                 # to start the server through npm
+    > node server               # to start the server
+
+The server should respond your http requests on local port 8080.
+
 ### Running with Docker
 
-Boilerplate also comes with Docker support. To build and run the container, run:
+Boilerplate also comes with Docker support. To have a minimal Docker image and
+speed up the containerization, the whole app is built before the packaging, and
+only the Node.js production dependencies get packaged. To build and run the
+container, run:
 
-    > docker build -t bobrsass .
-    > docker run -d -P bobrsass
+    > npm run build             # to build the application in production mode
+    > docker build -t bobrsass . # to build the Docker image with name "docker"
+    > docker run -d -P bobrsass # to star the app
 
-To access the service, check the dynamically allocated port (for example: 0.0.0.0:49164->8080/tcp)
-and use it in browser URL
+To access the service, check the dynamically allocated port
+(for example: 0.0.0.0:49164->8080/tcp) and use it in browser URL
 
-    > docker ps
-    # --> http://localhost:49164/
+    > docker ps                 # --> http://localhost:49164/
 
 Localhost works in Linux environment, but if you are using boot2docker, you need to use VM IP
 instead. Check the IP and replace `localhost` with it:
@@ -94,9 +115,9 @@ instead. Check the IP and replace `localhost` with it:
 
 ### Live Reloading the Changes
 
-Live reloading is enabled when running *gulp watch* in another window. Just change any of your
-JavaScript or SASS files to trigger reload. The reload monitors 'dist' directory and pushes the
-changes as needed.
+Live reloading is enabled when running *gulp watch* in another window. Just
+change any of your JavaScript or SASS files to trigger reload. The reload
+monitors 'dist' directory and pushes the changes as needed.
 
 ##  Extending & Hacking
 
