@@ -89,23 +89,36 @@ gulp.task('jshint', function() {
 gulp.task('javascript', function() {
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
-  var bundleName = util.format('bundle-%s.js', config.version),
-      browserifyConfig = {
-        debug: config.debug,
-        shim: {
-          jquery: {
-            path: 'src/components/jquery/dist/jquery.js',
-            exports: 'jQuery'
-          }
-        }
-      };
+  // jscs:disable requireMultipleVarDecl
+  var bundleName = util.format('bundle-%s.js', config.version);
 
-  return gulp.src('src/app/main.js', { read: false })
-    .pipe($.plumber())
-    .pipe($.browserify(browserifyConfig))
+  // Note: two pipes get combined together by first
+  // combining components into one bundle, then adding
+  // app sources, and reordering the items. Note that
+  // we expect Angular to be the first item in bower.json
+  // so that component concatenation works
+  var components = gulp.src(bowerFiles())
+    .pipe($.filter('**/*.js'))
+    .pipe($.plumber());
+
+  var templates = gulp.src(['src/app/**/*.html', '!src/index.html'])
+    .pipe($.angularTemplatecache('templates.js', { standalone: true }));
+
+  var app = gulp.src('src/app/**/*.js');
+
+  return eventStream.merge(components, templates, app)
+    .pipe($.order([
+      'components/angular/angular.js',
+      'components/**/*.js',
+      'templates.js',
+      'app/**/*.js'
+    ], { base: path.join(__dirname, 'src') }))
+    .pipe($.if(config.debug, $.sourcemaps.init()))
     .pipe($.concat(bundleName))
     .pipe($.changed('dist'), changeOptions)
+    .pipe($.if(!config.debug, $.ngAnnotate()))
     .pipe($.if(!config.debug, $.uglify()))
+    .pipe($.if(config.debug, $.sourcemaps.write()))
     .pipe(gulp.dest('dist'));
 });
 
@@ -117,17 +130,17 @@ gulp.task('stylesheets', function() {
 
   // Pick all the 3rd party CSS and SASS, concat them into 3rd party
   // components bundle. Then append them to our own sources, and
-  // throw them all through Compass
+  // throw them all throu gh Compass
   var components = gulp.src(bowerFiles())
     .pipe($.filter(['**/*.css']))
     .pipe($.concat('components.css'));
 
-  var app = gulp.src('src/styles/styles.scss')
+  var app = gulp.src('src/app/styles.scss')
     .pipe($.plumber())
     .pipe($.if(config.debug, $.sourcemaps.init()))
     .pipe($.compass({
       project: __dirname,
-      sass: 'src/styles',
+      sass: 'src/app',
       css: 'temp/styles'
     }))
     .pipe($.concat('app.css'));
@@ -184,9 +197,9 @@ gulp.task('watch', ['build'], function() {
         jsTasks = (lintOnWatch ? ['jshint', 'jscs'] : []).concat(['javascript']);
 
       // Compose several watch streams, each resulting in their own pipe
-      gulp.watch('src/styles/**/*.scss', ['stylesheets']);
-      gulp.watch('src/app/**/*.js', jsTasks);
-      gulp.watch(['src/assets/**', 'src/**/*.html'], ['assets']);
+      gulp.watch('src/app/**/*.scss', ['stylesheets']);
+      gulp.watch(['src/app/**/*.js', 'src/**/*.html'], jsTasks);
+      gulp.watch(['src/assets/**'], ['assets']);
 
       // Watch any changes to the dist directory
       gulp.watch(['dist/**/*.js', 'dist/**/*.css'], integrationTasks);
