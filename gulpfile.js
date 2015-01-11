@@ -1,27 +1,29 @@
 'use strict';
 
-var path = require('path'),
-    util = require('util'),
-    gulp = require('gulp'),
-    exec = require('exec-wait'),
-    $ = require('gulp-load-plugins')(),
-    runSequence = require('run-sequence'),
-    bowerFiles = require('main-bower-files'),
+var bowerFiles = require('main-bower-files'),
+    browserSync = require('browser-sync'),
+    del = require('del'),
     eventStream = require('event-stream'),
-    pkg = require('./package.json');
+    exec = require('exec-wait'),
+    gulp = require('gulp'),
+    path = require('path'),
+    pkg = require('./package.json'),
+    Promise = require('bluebird'),
+    runSequence = require('run-sequence'),
+    util = require('util'),
+    $ = require('gulp-load-plugins')();
 
 /* Configurations. Note that most of the configuration is stored in
 the task context. These are mainly for repeating configuration items */
 // jscs:disable requireMultipleVarDecl
 var config = {
     version: pkg.version,
+    port: process.env.PORT || pkg.config.port,
+    hostname: process.env.HOSTNAME || pkg.config.hostname,
     debug: Boolean($.util.env.debug) || (process.env.NODE_ENV === 'development'),
     production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
   },
-  port = Number(process.env.PORT || 8080),
-  hostName = process.env.HOSTNAME || 'localhost',
-  host = [hostName, port].join(':'),
-  url = ['http://', host, '/'].join(''),
+  url = ['http://', config.hostname + ':' + config.port, '/'].join(''),
   // Global vars used across the test tasks
   testServerCmdAndArgs = pkg.scripts.start.split(/\s/),
   phantomPath = path.dirname(require.resolve('phantomjs')),
@@ -40,7 +42,8 @@ var config = {
     monitor: { url: url, checkHTTPResponse: false },
     log: $.util.log,
     stopSignal: 'SIGTERM'
-  });
+  }),
+  changeOptions = { hasChanged: $.changed.compareSha1Digest };
 // jscs:enable requireMultipleVarDecl
 
 // Package management
@@ -52,8 +55,6 @@ gulp.task('install', function() {
 });
 
 gulp.task('clean', function(cb) {
-  var del = require('del');
-
   return del([
     'dist',
     // here we use a globbing pattern to match everything inside the `mobile` folder
@@ -73,22 +74,14 @@ gulp.task('bump', function() {
     .pipe(gulp.dest('./'));
 });
 
-/* Serve the web site */
-gulp.task('serve', $.serve({
-  root: 'dist',
-  port: port
-}));
-
 gulp.task('jscs', function() {
   return gulp.src(['src/app/**/*.js'])
-    .pipe($.cached('jscs'))
     .pipe($.plumber())
     .pipe($.jscs());
 });
 
 gulp.task('jshint', function() {
   return gulp.src('src/app/**/*.js')
-    .pipe($.cached('jslint'))
     .pipe($.jshint())
     .pipe($.jshint.reporter('default'));
 });
@@ -111,6 +104,7 @@ gulp.task('javascript', function() {
     .pipe($.plumber())
     .pipe($.browserify(browserifyConfig))
     .pipe($.concat(bundleName))
+    .pipe($.changed('dist'), changeOptions)
     .pipe($.if(!config.debug, $.uglify()))
     .pipe(gulp.dest('dist'));
 });
@@ -145,6 +139,7 @@ gulp.task('stylesheets', function() {
       '**/app.css'
     ]))
     .pipe($.concat(bundleName))
+    .pipe($.changed('dist/styles'), changeOptions)
     .pipe($.if(!config.debug, $.csso()))
     .pipe($.if(config.debug,
       $.sourcemaps.write({ sourceRoot: path.join(__dirname, 'src/styles') }))
@@ -156,7 +151,7 @@ gulp.task('stylesheets', function() {
 
 gulp.task('assets', function() {
   return gulp.src('src/assets/**')
-    .pipe($.cached('assets'))
+    .pipe($.changed('dist/assets'), changeOptions)
     .pipe(gulp.dest('dist/assets'));
     // Integration test
 });
@@ -169,13 +164,13 @@ gulp.task('integrate', function() {
   // Check whether to run tests as part of integration
   return target
     .pipe($.inject(source, params))
-    .pipe(gulp.dest('./dist'));
+    .pipe($.changed('dist'), changeOptions)
+    .pipe(gulp.dest('dist'));
 });
 
 gulp.task('watch', ['build'], function() {
-  var browserSync = require('browser-sync'),
-    testOnWatch = Boolean(typeof $.util.env.test === 'undefined' ? false : true),
-    lintOnWatch = Boolean(typeof $.util.env.nolint === 'undefined' ? true :  false);
+  var testOnWatch = Boolean(typeof $.util.env.test === 'undefined' ? false : true),
+      lintOnWatch = Boolean(typeof $.util.env.nolint === 'undefined' ? true :  false);
 
   // Watch needs a test server to run; start that.
   return testServer.start()
@@ -199,15 +194,13 @@ gulp.task('watch', ['build'], function() {
       $.util.log('Initialise BrowserSync on port 8081');
       browserSync.init({
         files: 'dist/**/*',
-        proxy: host,
+        proxy: config.hostname,
         port: 8081
       });
     });
 });
 
 gulp.task('test-setup', function() {
-  var Promise = require('bluebird');
-
   return testServer.start()
     .then(ghostDriver.start)
     .then(function() {
@@ -228,7 +221,6 @@ gulp.task('test-setup', function() {
 });
 
 gulp.task('test-run', function() {
-  var Promise = require('bluebird');
   $.util.log('Running protractor');
 
   return new Promise(function(resolve) {
@@ -260,10 +252,6 @@ gulp.task('test', function() {
 // Task combinations
 gulp.task('build', function() {
   return runSequence(['javascript', 'stylesheets', 'assets'], 'integrate');
-});
-
-gulp.task('prepublish', function() {
-  return runSequence('install', 'build', 'test');
 });
 
 gulp.task('default', ['build', 'test']);
