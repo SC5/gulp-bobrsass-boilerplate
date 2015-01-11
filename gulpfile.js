@@ -42,7 +42,8 @@ var config = {
     monitor: { url: url, checkHTTPResponse: false },
     log: $.util.log,
     stopSignal: 'SIGTERM'
-  });
+  }),
+  changeOptions = { hasChanged: $.changed.compareSha1Digest };
 // jscs:enable requireMultipleVarDecl
 
 // Package management
@@ -75,14 +76,12 @@ gulp.task('bump', function() {
 
 gulp.task('jscs', function() {
   return gulp.src(['src/app/**/*.js'])
-    .pipe($.cached('jscs'))
     .pipe($.plumber())
     .pipe($.jscs());
 });
 
 gulp.task('jshint', function() {
   return gulp.src('src/app/**/*.js')
-    .pipe($.cached('jslint'))
     .pipe($.jshint())
     .pipe($.jshint.reporter('default'));
 });
@@ -105,6 +104,7 @@ gulp.task('javascript', function() {
     .pipe($.plumber())
     .pipe($.browserify(browserifyConfig))
     .pipe($.concat(bundleName))
+    .pipe($.changed('dist'), changeOptions)
     .pipe($.if(!config.debug, $.uglify()))
     .pipe(gulp.dest('dist'));
 });
@@ -139,6 +139,7 @@ gulp.task('stylesheets', function() {
       '**/app.css'
     ]))
     .pipe($.concat(bundleName))
+    .pipe($.changed('dist/styles'), changeOptions)
     .pipe($.if(!config.debug, $.csso()))
     .pipe($.if(config.debug,
       $.sourcemaps.write({ sourceRoot: path.join(__dirname, 'src/styles') }))
@@ -150,7 +151,7 @@ gulp.task('stylesheets', function() {
 
 gulp.task('assets', function() {
   return gulp.src('src/assets/**')
-    .pipe($.cached('assets'))
+    .pipe($.changed('dist/assets'), changeOptions)
     .pipe(gulp.dest('dist/assets'));
     // Integration test
 });
@@ -163,7 +164,8 @@ gulp.task('integrate', function() {
   // Check whether to run tests as part of integration
   return target
     .pipe($.inject(source, params))
-    .pipe(gulp.dest('./dist'));
+    .pipe($.changed('dist'), changeOptions)
+    .pipe(gulp.dest('dist'));
 });
 
 gulp.task('watch', ['build'], function() {

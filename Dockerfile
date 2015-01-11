@@ -15,8 +15,7 @@ USER app
 # Install and package production deps; see the extensive 
 # file ignore list at .dockerignore
 WORKDIR /app
-COPY package.json /app/
-COPY README.md /app/ 
+COPY package.json README.md /app/
 RUN npm install --production
 COPY . /app
 
