@@ -1,4 +1,7 @@
 'use strict';
+// Supress warnings on node.js globals & $.if
+/* jshint -W024 */
+/* global process, require, __dirname */
 
 var bowerFiles = require('main-bower-files'),
     browserSync = require('browser-sync'),
@@ -105,6 +108,7 @@ gulp.task('javascript', function() {
     .pipe($.angularTemplatecache('templates.js', { standalone: true }));
 
   var app = gulp.src('src/app/**/*.js');
+  // jscs:enable requireMultipleVarDecl
 
   return eventStream.merge(components, templates, app)
     .pipe($.order([
@@ -141,7 +145,8 @@ gulp.task('stylesheets', function() {
     .pipe($.compass({
       project: __dirname,
       sass: 'src/app',
-      css: 'temp/styles'
+      css: 'temp/styles',
+      sourcemap: true
     }))
     .pipe($.concat('app.css'));
   //jscs:enable requireMultipleVarDecl

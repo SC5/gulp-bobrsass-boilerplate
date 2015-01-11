@@ -1,5 +1,5 @@
 # Gulp BoBrSASS Boilerplate
-[![Build Status](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)
+[![Build Status](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=angularjs)](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)
 
 BoBrSASS is a modifiable boilerplate combining some of our common tools and
 practices:
