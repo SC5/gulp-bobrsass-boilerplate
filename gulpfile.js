@@ -194,7 +194,7 @@ gulp.task('watch', ['build'], function() {
       $.util.log('Initialise BrowserSync on port 8081');
       browserSync.init({
         files: 'dist/**/*',
-        proxy: config.hostname,
+        proxy: [config.hostname, config.port].join(':'),
         port: 8081
       });
     });
