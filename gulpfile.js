@@ -16,6 +16,7 @@ var bowerFiles = require('main-bower-files'),
 /* Configurations. Note that most of the configuration is stored in
 the task context. These are mainly for repeating configuration items */
 // jscs:disable requireMultipleVarDecl
+// App config
 var config = {
     version: pkg.version,
     port: process.env.PORT || pkg.config.port,
@@ -23,6 +24,7 @@ var config = {
     debug: Boolean($.util.env.debug) || (process.env.NODE_ENV === 'development'),
     production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
   },
+  // Test server URL (shared with server.js)
   url = ['http://', config.hostname + ':' + config.port, '/'].join(''),
   // Global vars used across the test tasks
   testServerCmdAndArgs = pkg.scripts.start.split(/\s/),
@@ -43,6 +45,7 @@ var config = {
     log: $.util.log,
     stopSignal: 'SIGTERM'
   }),
+  // Options for gulp-changed to track file changes
   changeOptions = { hasChanged: $.changed.compareSha1Digest };
 // jscs:enable requireMultipleVarDecl
 
@@ -104,8 +107,8 @@ gulp.task('javascript', function() {
     .pipe($.plumber())
     .pipe($.browserify(browserifyConfig))
     .pipe($.concat(bundleName))
-    .pipe($.changed('dist'), changeOptions)
     .pipe($.if(!config.debug, $.uglify()))
+    .pipe($.changed('dist', changeOptions))
     .pipe(gulp.dest('dist'));
 });
 
@@ -139,11 +142,11 @@ gulp.task('stylesheets', function() {
       '**/app.css'
     ]))
     .pipe($.concat(bundleName))
-    .pipe($.changed('dist/styles'), changeOptions)
     .pipe($.if(!config.debug, $.csso()))
     .pipe($.if(config.debug,
       $.sourcemaps.write({ sourceRoot: path.join(__dirname, 'src/styles') }))
     )
+    .pipe($.changed('dist', changeOptions))
     .pipe(gulp.dest('dist/styles'))
     .pipe($.if(!config.production, $.csslint()))
     .pipe($.if(!config.production, $.csslint.reporter()));
@@ -151,9 +154,9 @@ gulp.task('stylesheets', function() {
 
 gulp.task('assets', function() {
   return gulp.src('src/assets/**')
-    .pipe($.changed('dist/assets'), changeOptions)
+    // Due to file name match, using time delta with gulp-changed is alright
+    .pipe($.changed('dist', changeOptions))
     .pipe(gulp.dest('dist/assets'));
-    // Integration test
 });
 
 gulp.task('integrate', function() {
@@ -186,7 +189,8 @@ gulp.task('watch', ['build'], function() {
       // Compose several watch streams, each resulting in their own pipe
       gulp.watch('src/styles/**/*.scss', ['stylesheets']);
       gulp.watch('src/app/**/*.js', jsTasks);
-      gulp.watch(['src/assets/**', 'src/**/*.html'], ['assets']);
+      gulp.watch(['src/assets/**'], ['assets']);
+      gulp.watch(['src/index.html'], ['integrate']);
 
       // Watch any changes to the dist directory
       gulp.watch(['dist/**/*.js', 'dist/**/*.css'], integrationTasks);
