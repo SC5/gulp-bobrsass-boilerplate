@@ -1,3 +1,5 @@
+'use strict';
+
 angular.module('SC5AngularBoilerplate', [
     'ngResource',
     'ngRoute',
@@ -5,6 +7,8 @@ angular.module('SC5AngularBoilerplate', [
   ])
   .config(function($routeProvider, $locationProvider) {
     console.log('Hello from config');
+
+    $locationProvider.html5Mode(true);
     $routeProvider.
       when('/', {
         templateUrl: 'main/main.html'

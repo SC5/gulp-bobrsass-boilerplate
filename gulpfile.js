@@ -118,7 +118,6 @@ gulp.task('javascript', function() {
     ], { base: path.join(__dirname, 'src') }))
     .pipe($.if(config.debug, $.sourcemaps.init()))
     .pipe($.concat(bundleName))
-    .pipe($.changed('dist'), changeOptions)
     .pipe($.if(!config.debug, $.ngAnnotate()))
     .pipe($.if(!config.debug, $.uglify()))
     .pipe($.if(config.debug, $.sourcemaps.write()))

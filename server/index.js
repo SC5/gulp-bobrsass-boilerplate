@@ -12,7 +12,7 @@ var express = require('express'),
 app.use(function(req, res, next) {
   var u = url.parse(req.url),
       // Rewrite urls of form 'main' & 'sample' to blank
-      rule = /^\/(main|sample)/;
+      rule = /^\/(main|sample)\/?/;
 
   if (u.pathname.match(rule)) {
     u.pathname = u.pathname.replace(rule, '/');
