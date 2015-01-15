@@ -1,10 +1,19 @@
-var $ = require('jquery');
-
-function start() {
-  // Start the app here
-  $('#status').html('If you can read this text, your stack should be alright.');
-}
-
-exports = module.exports = {
-  start: start
-};
+angular.module('SC5AngularBoilerplate', [
+    'ngResource',
+    'ngRoute',
+    'templates'
+  ])
+  .config(function($routeProvider, $locationProvider) {
+    console.log('Hello from config');
+    $routeProvider.
+      when('/', {
+        templateUrl: 'main/main.html'
+      }).
+      when('/sample', {
+        templateUrl: 'sample/sample.html',
+        controller: 'SampleController'
+      }).
+      otherwise({
+        redirectTo: '/'
+      });
+  });

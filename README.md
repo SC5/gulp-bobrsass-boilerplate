@@ -1,5 +1,5 @@
 # Gulp BoBrSASS Boilerplate
-[![Build Status](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)
+[![Build Status](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=angularjs)](https://travis-ci.org/SC5/gulp-bobrsass-boilerplate.png?branch=master)
 
 BoBrSASS is a modifiable boilerplate combining some of our common tools and
 practices:
@@ -129,8 +129,8 @@ monitors 'dist' directory and pushes the changes as needed.
     src/index.html   The HTML entry point, stub page
     src/app          Application source code
     src/app/main.js  The app JS entry point
+    src/app/*/       Controllers, directives etc. submodules
     src/components   The 3rd party JS dependencies
-    src/css          The CSS templates
 
 
 ####  Build System

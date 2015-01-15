@@ -29,7 +29,7 @@
   "maxdepth": 3,
   "maxdepth": 10,
   "smarttabs": true,
-  // Imply the node.js (Browserify) and browser environments
-  "node": true,
-  "browser": true
+  // Imply the angular environment
+  "browser": true,
+  "predef": ["angular", "console"]
 }
