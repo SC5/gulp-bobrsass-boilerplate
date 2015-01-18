@@ -1,4 +1,7 @@
-.git
+.*
+*.js
+bower.json
+src
+temp
+tests
 node_modules
-# Project files
-*.sublime-*
