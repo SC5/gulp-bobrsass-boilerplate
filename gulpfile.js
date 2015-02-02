@@ -11,6 +11,7 @@ var bowerFiles = require('main-bower-files'),
     Promise = require('bluebird'),
     runSequence = require('run-sequence'),
     util = require('util'),
+    phonegapBuild = require('gulp-phonegap-build'),
     $ = require('gulp-load-plugins')();
 
 /* Configurations. Note that most of the configuration is stored in
@@ -18,11 +19,16 @@ the task context. These are mainly for repeating configuration items */
 // jscs:disable requireMultipleVarDecl
 // App config
 var config = {
+    appName: 'gulp-bobrsass-boilerplate',
     version: pkg.version,
     port: process.env.PORT || pkg.config.port,
     hostname: process.env.HOSTNAME || pkg.config.hostname,
     debug: Boolean($.util.env.debug) || (process.env.NODE_ENV === 'development'),
-    production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
+    production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production'),
+    keys: {
+      ios: '',
+      android: ''
+    }
   },
   // Test server URL (shared with server.js)
   url = ['http://', config.hostname + ':' + config.port, '/'].join(''),
@@ -59,7 +65,7 @@ gulp.task('install', function() {
 
 gulp.task('clean', function(cb) {
   return del([
-    'dist',
+    'www',
     // here we use a globbing pattern to match everything inside the `mobile` folder
     'temp'
   ], cb);
@@ -121,8 +127,8 @@ gulp.task('javascript', function() {
     .pipe($.if(!config.debug, $.ngAnnotate()))
     .pipe($.if(!config.debug, $.uglify()))
     .pipe($.if(config.debug, $.sourcemaps.write()))
-    .pipe($.changed('dist', changeOptions))
-    .pipe(gulp.dest('dist'));
+    .pipe($.changed('www', changeOptions))
+    .pipe(gulp.dest('www'));
 });
 
 gulp.task('stylesheets', function() {
@@ -159,8 +165,8 @@ gulp.task('stylesheets', function() {
     .pipe($.if(config.debug,
       $.sourcemaps.write({ sourceRoot: path.join(__dirname, 'src/styles') }))
     )
-    .pipe($.changed('dist/styles', changeOptions))
-    .pipe(gulp.dest('dist/styles'))
+    .pipe($.changed('www/styles', changeOptions))
+    .pipe(gulp.dest('www/styles'))
     .pipe($.if(!config.production, $.csslint()))
     .pipe($.if(!config.production, $.csslint.reporter()));
 });
@@ -168,21 +174,21 @@ gulp.task('stylesheets', function() {
 gulp.task('assets', function() {
   return gulp.src('src/assets/**')
     // Due to file name match, using time delta with gulp-changed is alright
-    .pipe($.changed('dist', changeOptions))
-    .pipe(gulp.dest('dist/assets'));
+    .pipe($.changed('www', changeOptions))
+    .pipe(gulp.dest('www/assets'));
     // Integration test
 });
 
 gulp.task('integrate', function() {
   var target = gulp.src('src/index.html'),
-      source = gulp.src(['dist/*.js', 'dist/styles/*.css'], { read: false }),
-      params = { ignorePath: ['/dist/'], addRootSlash: false };
+      source = gulp.src(['www/*.js', 'www/styles/*.css'], { read: false }),
+      params = { ignorePath: ['/www/'], addRootSlash: false };
 
   // Check whether to run tests as part of integration
   return target
     .pipe($.inject(source, params))
-    .pipe($.changed('dist'), changeOptions)
-    .pipe(gulp.dest('dist'));
+    .pipe($.changed('www'), changeOptions)
+    .pipe(gulp.dest('www'));
 });
 
 gulp.task('watch', ['build'], function() {
@@ -207,11 +213,11 @@ gulp.task('watch', ['build'], function() {
       gulp.watch(['src/index.html'], ['integrate']);
 
       // Watch any changes to the dist directory
-      gulp.watch(['dist/**/*.js', 'dist/**/*.css'], integrationTasks);
+      gulp.watch(['www/**/*.js', 'www/**/*.css'], integrationTasks);
 
       $.util.log('Initialise BrowserSync on port 8081');
       browserSync.init({
-        files: 'dist/**/*',
+        files: 'www/**/*',
         proxy: [config.hostname, config.port].join(':'),
         port: 8081
       });
@@ -255,6 +261,31 @@ gulp.task('test-run', function() {
     .on('error', function() {
       resolve();
     });
+  });
+});
+
+//build.phonegap.com
+gulp.task('phonegap-build', function(done) {
+  runSequence('default', function() {
+    gulp.src(['www/**/*', 'config.xml'])
+    .pipe(phonegapBuild({
+      appId: '1295138',
+      user: {
+        token: '9tWyG3gyes4i4EyhvjsW'
+      },
+      keys: {
+        ios: { password: config.keys.ios },
+        android: {
+          keyPassword: config.keys.android,
+          keystorePw: config.keys.android
+        }
+      },
+      download: {
+        ios: 'downloads/' + config.appName + '.ipa',
+        android: 'downloads/' + config.appName + '.apk',
+        winphone: 'downloads/' + config.appName + '.xap'
+      }
+    }));
   });
 });
 

@@ -1,5 +1,6 @@
 temp
 dist
+www
 node_modules
 src/components
 .sass-cache
