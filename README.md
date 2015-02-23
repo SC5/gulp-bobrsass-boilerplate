@@ -32,10 +32,11 @@ Install Ruby gems for Compass and and SASS as follows:
     > gem update --system
     > gem install sass compass
 
-Clone the project and trigger installation of the project npm dependencies by
+Clone the project and trigger installation of the project dependencies by
 
     > git clone https://github.com/SC5/gulp-bobrsass-boilerplate.git
     > npm install
+    > npm run deps
 
 ## Building
 
