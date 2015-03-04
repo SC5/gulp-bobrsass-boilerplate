@@ -144,7 +144,8 @@ gulp.task('stylesheets', function() {
     .pipe($.compass({
       project: __dirname,
       sass: 'src/app',
-      css: 'temp/styles'
+      css: 'temp/styles',
+      bundle_exec: true
     }))
     .pipe($.concat('app.css'));
   //jscs:enable requireMultipleVarDecl

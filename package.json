@@ -55,7 +55,7 @@
   },
   "scripts": {
     "build": "gulp build",
-    "deps": "gulp install",
+    "deps": "./system-deps.sh && gulp install",
     "test": "gulp test",
     "watch": "gulp watch",
     "start": "node server"
