@@ -45,6 +45,8 @@ var config = {
     log: $.util.log,
     stopSignal: 'SIGTERM'
   }),
+  // The last test run result
+  lastTestRunPassed = true,
   // Options for gulp-changed to track file changes
   changeOptions = { hasChanged: $.changed.compareSha1Digest };
 // jscs:enable requireMultipleVarDecl
@@ -144,7 +146,8 @@ gulp.task('stylesheets', function() {
     .pipe($.compass({
       project: __dirname,
       sass: 'src/app',
-      css: 'temp/styles'
+      css: 'temp/styles',
+      bundle_exec: true
     }))
     .pipe($.concat('app.css'));
   //jscs:enable requireMultipleVarDecl
@@ -240,6 +243,7 @@ gulp.task('test-setup', function() {
 
 gulp.task('test-run', function() {
   $.util.log('Running protractor');
+  lastTestRunPassed = true;
 
   return new Promise(function(resolve) {
     gulp.src(['tests/*.js'])
@@ -253,6 +257,10 @@ gulp.task('test-run', function() {
       resolve();
     })
     .on('error', function() {
+      // Keep the last test run result to be able to exit with proper
+      // non-zero return code after setup-run-teardown-sequence has
+      // completed.
+      lastTestRunPassed = false;
       resolve();
     });
   });
@@ -263,8 +271,19 @@ gulp.task('test-teardown', function() {
     .then(testServer.stop);
 });
 
-gulp.task('test', function() {
-  return runSequence('test-setup', 'test-run', 'test-teardown');
+// Sole purpose of this task is to exit with non-zero return code if
+// last test-run did not pass.
+gulp.task('test-retcode', function() {
+  return new Promise(function (resolve) {
+    if (!lastTestRunPassed) {
+      process.exit(1);
+    }
+    resolve();
+  });
+});
+
+gulp.task('test', function(done) {
+  return runSequence('test-setup', 'test-run', 'test-teardown', 'test-retcode', done);
 });
 
 // Task combinations
