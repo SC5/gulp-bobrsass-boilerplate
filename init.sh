@@ -10,5 +10,5 @@ rvm install ruby-2.1.3
 rvm use ruby-2.1.3
 gem install sass compass
 npm install -g bower gulp
-bower install --allow-root
+bower install --allow-root --config.interactive=false
 npm install --debug
