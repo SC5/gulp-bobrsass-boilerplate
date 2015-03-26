@@ -25,7 +25,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	  v.customize ["modifyvm", :id, "--ioapic", "on"]
   end
 
-  # Ansible parameters
   config.vm.provision :shell,
     :keep_color => true,
     :inline => "cd /vagrant && ./init.sh"
