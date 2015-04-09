@@ -1,3 +1,5 @@
+/* jshint -W024 */ /* Disable reserved word check for $.if */
+
 'use strict';
 
 var $ = require('gulp-load-plugins')();
