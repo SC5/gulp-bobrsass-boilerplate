@@ -1,57 +1,69 @@
 'use strict';
 
-var bowerFiles = require('main-bower-files'),
-    browserSync = require('browser-sync'),
-    del = require('del'),
-    eventStream = require('event-stream'),
-    exec = require('exec-wait'),
-    gulp = require('gulp'),
-    path = require('path'),
-    pkg = require('./package.json'),
-    Promise = require('bluebird'),
-    runSequence = require('run-sequence'),
-    util = require('util'),
-    $ = require('gulp-load-plugins')();
+var $ = require('gulp-load-plugins')();
+var bowerFiles = require('main-bower-files');
+var browserSync = require('browser-sync');
+var del = require('del');
+var eventStream = require('event-stream');
+var exec = require('exec-wait');
+var gulp = require('gulp');
+var path = require('path');
+var pkg = require('./package.json');
+var Promise = require('bluebird');
+var runSequence = require('run-sequence');
+var util = require('util');
 
-/* Configurations. Note that most of the configuration is stored in
-the task context. These are mainly for repeating configuration items */
-// jscs:disable requireMultipleVarDecl
+/*
+Configuration.
+Note that most of the configuration is stored in the task context.
+These are mainly for repeating configuration items.
+*/
+
 // App config
 var config = {
-    version: pkg.version,
-    port: process.env.PORT || pkg.config.port,
-    hostname: process.env.HOSTNAME || pkg.config.hostname,
-    debug: Boolean($.util.env.debug) || (process.env.NODE_ENV === 'development'),
-    production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
-  },
-  // Test server URL (shared with server.js)
-  url = ['http://', config.hostname + ':' + config.port, '/'].join(''),
-  // Global vars used across the test tasks
-  testServerCmdAndArgs = pkg.scripts.start.split(/\s/),
-  phantomPath = path.dirname(require.resolve('phantomjs')),
-  phantomCmd = path.resolve(phantomPath, require(path.join(phantomPath, 'location')).location),
-  ghostDriver = exec({
-    name: 'Ghostdriver',
-    cmd: phantomCmd,
-    args: ['--webdriver=4444', '--ignore-ssl-errors=true'],
-    monitor: { stdout: 'GhostDriver - Main - running on port 4444' },
-    log: $.util.log
-  }),
-  testServer = exec({
-    name: 'Test server',
-    cmd: testServerCmdAndArgs[0] + (process.platform === 'win32' ? '.cmd' : ''),
-    args: testServerCmdAndArgs.slice(1),
-    monitor: { url: url, checkHTTPResponse: false },
-    log: $.util.log,
-    stopSignal: 'SIGTERM'
-  }),
-  // The last test run result
-  lastTestRunPassed = true,
-  // Options for gulp-changed to track file changes
-  changeOptions = { hasChanged: $.changed.compareSha1Digest };
-// jscs:enable requireMultipleVarDecl
+  version: pkg.version,
+  port: process.env.PORT || pkg.config.port,
+  hostname: process.env.HOSTNAME || pkg.config.hostname,
+  debug: Boolean($.util.env.debug) || (process.env.NODE_ENV === 'development'),
+  production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
+};
 
-// Package management
+// Test server URL (shared with server.js)
+var url = ['http://', config.hostname + ':' + config.port, '/'].join('');
+
+// Global vars used across the test tasks
+var testServerCmdAndArgs = pkg.scripts.start.split(/\s/);
+var phantomPath = path.dirname(require.resolve('phantomjs'));
+var phantomCmd = path.resolve(phantomPath, require(path.join(phantomPath, 'location')).location);
+var ghostDriver = exec({
+  name: 'Ghostdriver',
+  cmd: phantomCmd,
+  args: ['--webdriver=4444', '--ignore-ssl-errors=true'],
+  monitor: { stdout: 'GhostDriver - Main - running on port 4444' },
+  log: $.util.log
+});
+var testServer = exec({
+  name: 'Test server',
+  cmd: testServerCmdAndArgs[0] + (process.platform === 'win32' ? '.cmd' : ''),
+  args: testServerCmdAndArgs.slice(1),
+  monitor: {
+    url: url,
+    checkHTTPResponse: false
+  },
+  log: $.util.log,
+  stopSignal: 'SIGTERM'
+});
+
+// The last test run result
+var lastTestRunPassed = true;
+
+// Options for gulp-changed to track file changes
+var changeOptions = { hasChanged: $.changed.compareSha1Digest };
+
+/*
+Package management.
+*/
+
 /* Install & update Bower dependencies */
 gulp.task('install', function() {
   // FIXME specifying the component directory broken in gulp
@@ -62,39 +74,40 @@ gulp.task('install', function() {
 gulp.task('clean', function(cb) {
   return del([
     'dist',
-    // here we use a globbing pattern to match everything inside the `mobile` folder
     'temp'
   ], cb);
 });
 
-/* Bump version number for package.json & bower.json */
-// TODO Provide means for appending a patch id based on git commit id or md5 hash
+/* Bump version number for package.json & bower.json. */
 gulp.task('bump', function() {
+  // TODO Provide means for appending a patch id based on git commit id or md5 hash
   // Fetch whether we're bumping major, minor or patch; default to minor
-  var env = $.util.env,
-      type = (env.major) ? 'major' : (env.patch) ? 'patch' : 'minor';
+  var env = $.util.env;
+  var type = (env.major) ? 'major' : (env.patch) ? 'patch' : 'minor';
 
   return gulp.src(['./bower.json', './package.json'])
     .pipe($.bump({ type: type }))
     .pipe(gulp.dest('./'));
 });
 
+/* JSCS linting */
 gulp.task('jscs', function() {
-  return gulp.src(['src/app/**/*.js'])
+  return gulp.src(['*.js', 'src/app/**/*.js', 'tests/**/*.js'])
     .pipe($.plumber())
-    .pipe($.jscs());
+    .pipe($.jscs('.jscsrc'));
 });
 
+/* JSHint style checking */
 gulp.task('jshint', function() {
-  return gulp.src('src/app/**/*.js')
+  return gulp.src(['*.js', 'src/app/**/*.js', 'tests/**/*.js'])
     .pipe($.jshint())
     .pipe($.jshint.reporter('default'));
 });
 
+/* Process javascript */
 gulp.task('javascript', function() {
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
-  // jscs:disable requireMultipleVarDecl
   var bundleName = util.format('bundle-%s.js', config.version);
 
   // Note: two pipes get combined together by first
@@ -127,8 +140,8 @@ gulp.task('javascript', function() {
     .pipe(gulp.dest('dist'));
 });
 
+/* Process stylesheets */
 gulp.task('stylesheets', function() {
-  //jscs:disable requireMultipleVarDecl
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
   var bundleName = util.format('styles-%s.css', config.version);
@@ -140,6 +153,7 @@ gulp.task('stylesheets', function() {
     .pipe($.filter(['**/*.css']))
     .pipe($.concat('components.css'));
 
+  /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
   var app = gulp.src('src/app/styles.scss')
     .pipe($.plumber())
     .pipe($.if(config.debug, $.sourcemaps.init()))
@@ -150,7 +164,7 @@ gulp.task('stylesheets', function() {
       bundle_exec: true
     }))
     .pipe($.concat('app.css'));
-  //jscs:enable requireMultipleVarDecl
+  /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
 
   return eventStream.merge(components, app)
     .pipe($.order([
@@ -168,18 +182,19 @@ gulp.task('stylesheets', function() {
     .pipe($.if(!config.production, $.csslint.reporter()));
 });
 
+/* Copy assets */
 gulp.task('assets', function() {
+  // Due to file name match, using time delta with gulp-changed is alright
   return gulp.src('src/assets/**')
-    // Due to file name match, using time delta with gulp-changed is alright
     .pipe($.changed('dist', changeOptions))
     .pipe(gulp.dest('dist/assets'));
-    // Integration test
 });
 
+/* Integration test */
 gulp.task('integrate', function() {
-  var target = gulp.src('src/index.html'),
-      source = gulp.src(['dist/*.js', 'dist/styles/*.css'], { read: false }),
-      params = { ignorePath: ['/dist/'], addRootSlash: false };
+  var target = gulp.src('src/index.html');
+  var source = gulp.src(['dist/*.js', 'dist/styles/*.css'], { read: false });
+  var params = { ignorePath: ['/dist/'], addRootSlash: false };
 
   // Check whether to run tests as part of integration
   return target
@@ -189,8 +204,8 @@ gulp.task('integrate', function() {
 });
 
 gulp.task('watch', ['build'], function() {
-  var testOnWatch = Boolean(typeof $.util.env.test === 'undefined' ? false : true),
-      lintOnWatch = Boolean(typeof $.util.env.nolint === 'undefined' ? true :  false);
+  var testOnWatch = typeof $.util.env.test !== 'undefined';
+  var lintOnWatch = typeof $.util.env.nolint === 'undefined';
 
   // Watch needs a test server to run; start that.
   return testServer.start()
@@ -200,8 +215,8 @@ gulp.task('watch', ['build'], function() {
       }
     })
     .then(function() {
-      var integrationTasks = ['integrate'].concat((testOnWatch) ? ['test-run'] : []),
-        jsTasks = (lintOnWatch ? ['jshint', 'jscs'] : []).concat(['javascript']);
+      var integrationTasks = ['integrate'].concat((testOnWatch) ? ['test-run'] : []);
+      var jsTasks = (lintOnWatch ? ['jshint', 'jscs'] : []).concat(['javascript']);
 
       // Compose several watch streams, each resulting in their own pipe
       gulp.watch('src/app/**/*.scss', ['stylesheets']);
@@ -226,6 +241,7 @@ gulp.task('test-setup', function() {
     .then(ghostDriver.start)
     .then(function() {
       $.util.log('Servers started');
+
       // Hookup to keyboard interrupts, so that we will
       // execute teardown prior to exiting
       process.once('SIGINT', function() {
@@ -237,6 +253,7 @@ gulp.task('test-setup', function() {
             process.exit();
           });
       });
+
       return Promise.resolve();
     });
 });
@@ -274,10 +291,11 @@ gulp.task('test-teardown', function() {
 // Sole purpose of this task is to exit with non-zero return code if
 // last test-run did not pass.
 gulp.task('test-retcode', function() {
-  return new Promise(function (resolve) {
+  return new Promise(function(resolve) {
     if (!lastTestRunPassed) {
       process.exit(1);
     }
+
     resolve();
   });
 });
