@@ -1,8 +1,22 @@
-temp
-dist
-node_modules
-src/components
-.sass-cache
-phantomjs.log
+# Application build artifacts
+/dist
+/temp
+
+# Dependencies and tools
+/node_modules
+/src/components
+
+# OS artifacts
+.DS_Store
+
+# Tools
+/Gemfile.lock
+/npm-debug.log
+/phantomjs.log
+/.sass-cache
+
+# Editors
+.project
+.settings
 *.sublime-*
-npm-debug.log
+*.swp
