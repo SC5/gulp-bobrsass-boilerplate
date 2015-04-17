@@ -5,9 +5,9 @@ BoBrSASS is a modifiable boilerplate combining some of our common tools and
 practices:
 * Gulp for fast builds
 * Browserify for bundling CommonJS modules
-* SASS & Compass stylesheets
+* Sass & Compass stylesheets
 * Runs in background (watching changes), supports live reload
-* Supports source maps for both JavaScript and SASS
+* Supports source maps for both JavaScript and Sass
 * Spaces instead of tabs
 * Headless protractor acceptance tests
 
@@ -15,7 +15,7 @@ practices:
 
 ### Prerequisites
 
-The latest version of BoBrSASS should work with recent versions of Ruby, SASS,
+The latest version of BoBrSASS should work with recent versions of Ruby, Sass,
 Compass and Git. Please check the correct versions, maintained in our
 [Travis configuration](https://github.com/SC5/gulp-bobrsass-boilerplate/blob/master/.travis.yml).
 If you insist on using an older version of dependencies, earlier versions of
@@ -27,7 +27,7 @@ later and [Ruby](https://www.ruby-lang.org/en/downloads/) 2.1 or later and
 [Git on Windows](http://msysgit.github.io/), remember to enable usage from
 command prompt.
 
-Install Ruby gems for Compass and and SASS as follows:
+Install Ruby gems for Compass and and Sass as follows:
 
     > gem update --system
     > gem install sass compass
@@ -117,7 +117,7 @@ instead. Check the IP and replace `localhost` with it:
 ### Live Reloading the Changes
 
 Live reloading is enabled when running *gulp watch* in another window. Just
-change any of your JavaScript or SASS files to trigger reload. The reload
+change any of your JavaScript or Sass files to trigger reload. The reload
 monitors 'dist' directory and pushes the changes as needed.
 
 ##  Extending & Hacking
