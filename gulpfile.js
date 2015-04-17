@@ -269,9 +269,9 @@ gulp.task('phonegap-build', function(done) {
   runSequence('default', function() {
     gulp.src(['www/**/*', 'config.xml'])
     .pipe(phonegapBuild({
-      appId: '1295138',
+      appId: '',
       user: {
-        token: '9tWyG3gyes4i4EyhvjsW'
+        token: ''
       },
       keys: {
         ios: { password: config.keys.ios },

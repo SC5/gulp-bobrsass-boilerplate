@@ -7,3 +7,5 @@ src/components
 phantomjs.log
 *.sublime-*
 npm-debug.log
+platforms
+plugins

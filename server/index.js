@@ -23,7 +23,7 @@ app.use(function(req, res, next) {
 
   next();
 });
-app.use(express.static(__dirname + '/../dist'));
+app.use(express.static(__dirname + '/../www'));
 app.listen(config.port);
 
 console.log('Stub server running on port ' + config.port);
