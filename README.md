@@ -195,7 +195,7 @@ Plase see project GitHub [issue tracker](https://github.com/SC5/gulp-bobrsass-bo
 
 ## License
 
-Copyright (c) 2014 [SC5](http://sc5.io/), licensed for users and contributors under MIT license.
+Copyright (c) 2015 [SC5](http://sc5.io/), licensed for users and contributors under MIT license.
 https://github.com/sc5/grunt-bobrsass-boilerplate/blob/master/LICENSE-MIT
 
 
