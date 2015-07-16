@@ -9,9 +9,9 @@ else
 fi
 
 if bundle --version; then
-    echo 'Bundler found, running `bundle install --path vendor/bundle`.'
+    echo 'Bundler found, running `bundle install`.'
     echo 'If this fails, try to update rubygems: `gem update --system`.'
-    bundle install --path vendor/bundle
+    bundle install
 else
     echo 'DEPENDENCY MISSING!'
     echo 'Install <http://bundler.io/>, usually `gem install bundler`.'
