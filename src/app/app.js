@@ -1,23 +1,21 @@
 'use strict';
 
 angular.module('SC5AngularBoilerplate', [
-    'ngResource',
-    'ngRoute',
+    'ui.router',
     'templates'
   ])
-  .config(function($routeProvider, $locationProvider) {
+  .config(function($stateProvider, $urlRouterProvider, $locationProvider) {
     console.log('Hello from config');
-
     $locationProvider.html5Mode(true);
-    $routeProvider.
-      when('/', {
+    $urlRouterProvider.otherwise('/main');
+
+    $stateProvider
+      .state('main', {
+        url: '/main',
         templateUrl: 'main/main.html'
-      }).
-      when('/sample', {
-        templateUrl: 'sample/sample.html',
-        controller: 'SampleController'
-      }).
-      otherwise({
-        redirectTo: '/'
+      })
+      .state('sample', {
+        url: '/sample',
+        templateUrl: 'sample/sample.html'
       });
   });

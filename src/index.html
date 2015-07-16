@@ -7,16 +7,15 @@
   <!-- endinject -->
   <!-- inject:js -->
   <!-- endinject -->
-  <base href="/">
 </head>
 <body ng-controller="MainController">
   <header>
     <base href="/">
-    <a href="/">Main</a>
-    <a href="/sample">Sample</a>
+    <a ui-sref="main">Main</a>
+    <a ui-sref="sample">Sample</a>
   </header>
   <h1>BoBrSASS Test Page</h1>
-  <div id="status" ng-view>
+  <div id="status" ui-view>
     <p>If you see this, something is wrong with your installation.</p>
   </div>
   <footer>
