@@ -98,9 +98,9 @@ speed up the containerization, the whole app is built before the packaging, and
 only the Node.js production dependencies get packaged. To build and run the
 container, run:
 
-    > npm run build             # to build the application in production mode
-    > docker build -t bobrsass . # to build the Docker image with name "docker"
-    > docker run -d -P bobrsass # to star the app
+    > npm run build              # to build the application in production mode
+    > docker build -t bobrsass . # to build the Docker image with name "bobrsass"
+    > docker run -d -P bobrsass  # to start the app
 
 To access the service, check the dynamically allocated port
 (for example: 0.0.0.0:49164->8080/tcp) and use it in browser URL
