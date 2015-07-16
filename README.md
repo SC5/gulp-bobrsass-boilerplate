@@ -91,6 +91,23 @@ the build, but nothing blocks you from expanding it into a full-blown server.
 
 The server should respond your http requests on local port 8080.
 
+### Phonegap
+
+Boilerplate supports building app with Phonegap CLI and build.phonegap.com
+
+    > npm install -g Phonegap   # to install phonegap locally
+
+## Building and running with CLI
+
+    > phonegap build platform   # platform can be ios, android or wp8
+    > phonegap run platform     # -e or -d options are for emulator or device
+
+## build.phonegap.com
+
+Configure appid and token in gulp phonegap-build task and run
+
+    > gulp phonegap-build
+
 ### Running with Docker
 
 Boilerplate also comes with Docker support. To have a minimal Docker image and
