@@ -12,6 +12,7 @@ var gulp = require('gulp');
 var path = require('path');
 var pkg = require('./package.json');
 var Promise = require('bluebird');
+var awspublish = require('gulp-awspublish');
 var runSequence = require('run-sequence');
 var util = require('util');
 
@@ -27,7 +28,8 @@ var config = {
   port: process.env.PORT || pkg.config.port,
   hostname: process.env.HOSTNAME || pkg.config.hostname,
   debug: Boolean($.util.env.debug) || (process.env.NODE_ENV === 'development'),
-  production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production')
+  production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production'),
+  bucket: pkg.config.bucket
 };
 
 // Test server URL (shared with server.js)
@@ -236,6 +238,25 @@ gulp.task('watch', ['build'], function() {
         port: 8081
       });
     });
+});
+
+gulp.task('deploy', function() {
+  if (! config.bucket) {
+    $.util.log('ERROR: Bucket not defined')
+    return;
+  }
+  $.util.log('Upload to bucket ' + config.bucket);
+  var publisher = awspublish.create({
+    params: {
+      Bucket: config.bucket
+    }
+  });
+  var headers = {};
+
+  return gulp.src('dist/*')
+    .pipe(publisher.publish(headers))
+    .pipe(publisher.cache())
+    .pipe(awspublish.reporter());
 });
 
 gulp.task('test-setup', function() {
