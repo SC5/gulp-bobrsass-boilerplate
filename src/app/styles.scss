@@ -1,7 +1,7 @@
-/* A simple test case to verify Compass build works ok */
-#{headings(all)} {
-  color: #020202;
+
+header {
+  color: #dbdbdb;
 }
 
-@import "main/main";
-@import "sample/sample";
+@import "pages/main/main";
+@import "pages/sample/sample";

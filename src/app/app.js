@@ -1,21 +1,23 @@
-'use strict';
+(function() {
+  'use strict';
 
-angular.module('SC5AngularBoilerplate', [
+  var ngModule = angular.module('SC5AngularBoilerplate', [
     'ui.router',
-    'templates'
-  ])
-  .config(function($stateProvider, $urlRouterProvider, $locationProvider) {
+    'templates',
+    'app.header',
+    'app.footer',
+    'app.pages'
+  ]);
+
+  ngModule.config(function($urlRouterProvider, $locationProvider) {
     console.log('Hello from config');
+
     $locationProvider.html5Mode(true);
     $urlRouterProvider.otherwise('/main');
-
-    $stateProvider
-      .state('main', {
-        url: '/main',
-        templateUrl: 'main/main.html'
-      })
-      .state('sample', {
-        url: '/sample',
-        templateUrl: 'sample/sample.html'
-      });
   });
+
+  // Initialize application to document (whole page)
+  angular.element(document).ready(function() {
+    angular.bootstrap(document, ['SC5AngularBoilerplate']);
+  });
+})();

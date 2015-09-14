@@ -10,7 +10,6 @@
   "es3": true,
   "forin": true,
   "freeze": true,
-  "futurehostile": true,
   "latedef": true,
   "maxdepth": 10,
   "maxparams": 4,

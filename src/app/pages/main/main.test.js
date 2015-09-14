@@ -5,7 +5,7 @@ describe('test page', function() {
 
     var status = browser.driver.findElement(by.id('status'));
 
-    expect(status.getText()).toEqual('If you can read this text, your stack should be alright.');
+    expect(status.getText()).toEqual('If you can read this text, your stack should be alright!');
   });
 
 });

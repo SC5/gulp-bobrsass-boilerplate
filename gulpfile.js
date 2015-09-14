@@ -2,6 +2,7 @@
 
 'use strict';
 
+var fs = require('fs');
 var $ = require('gulp-load-plugins')();
 var bowerFiles = require('main-bower-files');
 var browserSync = require('browser-sync');
@@ -96,52 +97,92 @@ gulp.task('bump', function() {
 
 /* JSCS linting */
 gulp.task('jscs', function() {
-  return gulp.src(['*.js', 'src/app/**/*.js', 'tests/**/*.js'])
+  return gulp.src(['*.js', 'src/app/**/*.js'])
     .pipe($.plumber())
     .pipe($.jscs('.jscsrc'));
 });
 
 /* JSHint style checking */
 gulp.task('jshint', function() {
-  return gulp.src(['*.js', 'src/app/**/*.js', 'tests/**/*.js'])
+  return gulp.src(['*.js', 'src/app/**/*.js'])
     .pipe($.jshint())
     .pipe($.jshint.reporter('default'));
 });
 
 /* Process javascript */
-gulp.task('javascript', function() {
+gulp.task('javascript', [
+  'javascript-app',
+  'javascript-components'
+]);
+
+function javascriptTransform(inputStream, bundleName) {
+  return inputStream
+    .pipe($.sourcemaps.init())
+    .pipe($.concat(bundleName))
+    .pipe($.if(!config.debug, $.ngAnnotate()))
+    .pipe($.if(!config.debug, $.uglify()))
+    .pipe($.sourcemaps.write());
+}
+
+function getFolders(dir) {
+  return fs.readdirSync(dir).filter(function(file) {
+    return fs.statSync(path.join(dir, file)).isDirectory();
+  });
+}
+
+function bundleFolders(dir) {
+  var bundleName = 'module.js';
+
+  var folders = getFolders(dir);
+  var subModules = folders.map(function(folder) {
+    return bundleFolders(path.join(dir, folder), dir);
+  });
+
+  var files = gulp.src([path.join(dir, '*.js'), '!**/*.test.js', '!**/*.spec.js'])
+    .pipe($.order([
+      '*module*.js',
+      '*.js'
+    ]));
+
+  var moduleStream = javascriptTransform(files, bundleName);
+  subModules.push(moduleStream);
+
+  return javascriptTransform($.merge.apply($.merge, subModules), bundleName);
+}
+
+gulp.task('javascript-app', function() {
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
   var bundleName = util.format('bundle-%s.js', config.version);
 
-  // Note: two pipes get combined together by first
-  // combining components into one bundle, then adding
-  // app sources, and reordering the items. Note that
-  // we expect Angular to be the first item in bower.json
-  // so that component concatenation works
-  var components = gulp.src(bowerFiles())
-    .pipe($.filter('**/*.js'))
-    .pipe($.plumber());
-
   var templates = gulp.src(['src/app/**/*.html', '!src/index.html'])
-    .pipe($.angularTemplatecache('templates.js', { standalone: true }));
+      .pipe($.angularTemplatecache('templates.js', { standalone: true }));
 
-  var app = gulp.src('src/app/**/*.js');
+  var app = bundleFolders('src/app');
 
-  return eventStream.merge(components, templates, app)
-    .pipe($.order([
-      'components/angular/angular.js',
-      'components/**/*.js',
-      'templates.js',
-      'app/**/*.js'
-    ], { base: path.join(__dirname, 'src') }))
-    .pipe($.if(config.debug, $.sourcemaps.init()))
-    .pipe($.concat(bundleName))
-    .pipe($.if(!config.debug, $.ngAnnotate()))
-    .pipe($.if(!config.debug, $.uglify()))
-    .pipe($.if(config.debug, $.sourcemaps.write()))
-    .pipe($.changed('dist', changeOptions))
+  // TODO: Make sure that templates is first in bundle
+  var bundleStream = eventStream.merge(templates, app);
+
+  return javascriptTransform(bundleStream, bundleName).pipe($.changed('dist', changeOptions))
     .pipe(gulp.dest('dist'));
+});
+
+gulp.task('javascript-components', function() {
+  // The non-MD5fied prefix, so that we know which version we are actually
+  // referring to in case of fixing bugs
+  var bundleName = util.format('components-%s.js', config.version);
+
+  return gulp.src(bowerFiles())
+      .pipe($.filter('**/*.js'))
+      .pipe($.plumber())
+      .pipe($.order([
+        'components/**/jquery*.js',
+        'components/angular/angular.js',
+        'components/**/*.js'
+      ], { base: path.join(__dirname, 'src') }))
+      .pipe($.concat(bundleName))
+      .pipe($.changed('dist', changeOptions))
+      .pipe(gulp.dest('dist'));
 });
 
 /* Process stylesheets */
@@ -161,12 +202,7 @@ gulp.task('stylesheets', function() {
   var app = gulp.src('src/app/styles.scss')
     .pipe($.plumber())
     .pipe($.if(config.debug, $.sourcemaps.init()))
-    .pipe($.compass({
-      project: __dirname,
-      sass: 'src/app',
-      css: 'temp/styles',
-      bundle_exec: true
-    }))
+    .pipe($.sass().on('error', $.sass.logError))
     .pipe($.concat('app.css'));
   /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
 
@@ -178,7 +214,7 @@ gulp.task('stylesheets', function() {
     .pipe($.concat(bundleName))
     .pipe($.if(!config.debug, $.csso()))
     .pipe($.if(config.debug,
-      $.sourcemaps.write({ sourceRoot: path.join(__dirname, 'src/styles') }))
+      $.sourcemaps.write({ sourceRoot: path.join(__dirname, 'src/app') }))
     )
     .pipe($.changed('dist/styles', changeOptions))
     .pipe(gulp.dest('dist/styles'))
@@ -197,7 +233,11 @@ gulp.task('assets', function() {
 /* Integration test */
 gulp.task('integrate', function() {
   var target = gulp.src('src/index.html');
-  var source = gulp.src(['dist/*.js', 'dist/styles/*.css'], { read: false });
+  var source = gulp.src(['dist/*.js', 'dist/styles/*.css'], { read: false })
+      .pipe($.order([
+        '**/components-*.js',
+        '**/*.js'
+      ]));
   var params = { ignorePath: ['/dist/'], addRootSlash: false };
 
   // Check whether to run tests as part of integration
@@ -220,11 +260,12 @@ gulp.task('watch', ['build'], function() {
     })
     .then(function() {
       var integrationTasks = ['integrate'].concat((testOnWatch) ? ['test-run'] : []);
-      var jsTasks = (lintOnWatch ? ['jshint', 'jscs'] : []).concat(['javascript']);
+      var jsTasks = (lintOnWatch ? ['jshint', 'jscs'] : []).concat(['javascript-app']);
 
       // Compose several watch streams, each resulting in their own pipe
       gulp.watch('src/app/**/*.scss', ['stylesheets']);
       gulp.watch(['src/app/**/*.js', 'src/app/**/*.html'], jsTasks);
+      gulp.watch(['src/components/**/*.js'], ['javascript-components']);
       gulp.watch(['src/assets/**'], ['assets']);
       gulp.watch(['src/index.html'], ['integrate']);
 
@@ -286,7 +327,7 @@ gulp.task('test-run', function() {
   lastTestRunPassed = true;
 
   return new Promise(function(resolve) {
-    gulp.src(['tests/*.js'])
+    gulp.src(['src/app/**/*.test.js'])
     .pipe($.plumber())
     .pipe($.protractor.protractor({
       configFile: 'protractor.config.js',
