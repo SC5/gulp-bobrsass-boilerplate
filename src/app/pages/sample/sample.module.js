@@ -8,9 +8,10 @@
   ngModule.config(function($stateProvider) {
     $stateProvider
       .state('sample', {
-        url: '/sample',
+        url: '/sample/',
         templateUrl: 'pages/sample/sample.html',
-        controller: 'SampleController'
+        controller: 'SampleController',
+        controllerAs: 'sampleController'
       });
   });
 })();

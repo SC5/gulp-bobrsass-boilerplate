@@ -1,11 +1,11 @@
-describe('test page', function() {
+describe('main page', function() {
 
   it('should load', function() {
-    browser.driver.get('http://localhost:8080/');
+    browser.get('/main');
 
-    var status = browser.driver.findElement(by.id('status'));
+    var page = browser.driver.findElement(by.id('page'));
 
-    expect(status.getText()).toEqual('If you can read this text, your stack should be alright!');
+    expect(page.getText()).toMatch('If you can read this text, your stack should be alright.');
   });
 
 });

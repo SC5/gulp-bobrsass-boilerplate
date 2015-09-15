@@ -12,10 +12,10 @@ var exec = require('exec-wait');
 var gulp = require('gulp');
 var path = require('path');
 var pkg = require('./package.json');
-var Promise = require('bluebird');
 var awspublish = require('gulp-awspublish');
 var runSequence = require('run-sequence');
 var util = require('util');
+var karma = require('karma');
 
 /*
 Configuration.
@@ -61,6 +61,7 @@ var testServer = exec({
 
 // The last test run result
 var lastTestRunPassed = true;
+var lastUnitTestRunPassed = true;
 
 // Options for gulp-changed to track file changes
 var changeOptions = { hasChanged: $.changed.compareSha1Digest };
@@ -317,17 +318,14 @@ gulp.task('test-setup', function() {
             process.exit();
           });
       });
-
-      return Promise.resolve();
     });
 });
 
-gulp.task('test-run', function() {
+gulp.task('test-run-protractor', function(done) {
   $.util.log('Running protractor');
   lastTestRunPassed = true;
 
-  return new Promise(function(resolve) {
-    gulp.src(['src/app/**/*.test.js'])
+  gulp.src(['src/app/**/*.test.js'])
     .pipe($.plumber())
     .pipe($.protractor.protractor({
       configFile: 'protractor.config.js',
@@ -335,16 +333,15 @@ gulp.task('test-run', function() {
              '--baseUrl', url]
     }))
     .on('end', function() {
-      resolve();
+      done();
     })
     .on('error', function() {
       // Keep the last test run result to be able to exit with proper
       // non-zero return code after setup-run-teardown-sequence has
       // completed.
       lastTestRunPassed = false;
-      resolve();
+      done();
     });
-  });
 });
 
 gulp.task('test-teardown', function() {
@@ -354,18 +351,35 @@ gulp.task('test-teardown', function() {
 
 // Sole purpose of this task is to exit with non-zero return code if
 // last test-run did not pass.
-gulp.task('test-retcode', function() {
-  return new Promise(function(resolve) {
-    if (!lastTestRunPassed) {
-      process.exit(1);
-    }
+gulp.task('test-retcode', function(done) {
+  if (!lastTestRunPassed || !lastUnitTestRunPassed) {
+    process.exit(1);
+  }
 
-    resolve();
+  done();
+});
+
+gulp.task('test-protractor', function(done) {
+  return runSequence('test-setup', 'test-run-protractor', 'test-teardown', done);
+});
+
+gulp.task('test-run-karma', function(done) {
+  $.util.log('Running karma');
+
+  lastUnitTestRunPassed = true;
+  karma.server.start({
+    configFile: path.join(__dirname, 'karma.conf.js'),
+    singleRun: true
+  }, function(errorCode) {
+    lastUnitTestRunPassed = !errorCode;
+    done();
   });
 });
 
-gulp.task('test', function(done) {
-  return runSequence('test-setup', 'test-run', 'test-teardown', 'test-retcode', done);
+gulp.task('test-run', ['test-run-protractor', 'test-run-karma']);
+
+gulp.task('test', function() {
+  runSequence('test-run-karma', 'test-protractor', 'test-retcode');
 });
 
 // Task combinations

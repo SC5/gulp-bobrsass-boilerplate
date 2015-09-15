@@ -30,5 +30,5 @@
   "node": true,
 
   // For Angular & Protractor
-  "predef": ["angular", "browser", "by"]
+  "predef": ["angular", "browser", "by", "element", "inject"]
 }
