@@ -22,6 +22,7 @@
     "git-hooks": "1.0.0-rc.1",
     "gulp": "^3.8.10",
     "gulp-awspublish": "^3.0.0",
+    "gulp-angular-filesort": "^1.1.1",
     "gulp-angular-templatecache": "^1.5.0",
     "gulp-bower": "^0.0.10",
     "gulp-bump": "^0.3.1",

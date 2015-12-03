@@ -116,40 +116,6 @@ gulp.task('javascript', [
   'javascript-components'
 ]);
 
-function javascriptTransform(inputStream, bundleName) {
-  return inputStream
-    .pipe($.sourcemaps.init())
-    .pipe($.concat(bundleName))
-    .pipe($.if(!config.debug, $.ngAnnotate()))
-    .pipe($.if(!config.debug, $.uglify()))
-    .pipe($.sourcemaps.write());
-}
-
-function getFolders(dir) {
-  return fs.readdirSync(dir).filter(function(file) {
-    return fs.statSync(path.join(dir, file)).isDirectory();
-  });
-}
-
-function bundleFolders(dir) {
-  var bundleName = 'module.js';
-
-  var folders = getFolders(dir);
-  var subModules = folders.map(function(folder) {
-    return bundleFolders(path.join(dir, folder), dir);
-  });
-
-  var files = gulp.src([path.join(dir, '*.js'), '!**/*.test.js', '!**/*.spec.js'])
-    .pipe($.order([
-      '*module*.js',
-      '*.js'
-    ]));
-
-  var moduleStream = javascriptTransform(files, bundleName);
-  subModules.push(moduleStream);
-
-  return javascriptTransform($.merge.apply($.merge, subModules), bundleName);
-}
 
 gulp.task('javascript-app', function() {
   // The non-MD5fied prefix, so that we know which version we are actually
@@ -159,12 +125,18 @@ gulp.task('javascript-app', function() {
   var templates = gulp.src(['src/app/**/*.html', '!src/index.html'])
       .pipe($.angularTemplatecache('templates.js', { standalone: true }));
 
-  var app = bundleFolders('src/app');
+  var app = gulp.src(['src/app/**/*.js', '!src/app/**/*.test.js', '!src/app/**/*.spec.js']);
 
-  // TODO: Make sure that templates is first in bundle
-  var bundleStream = eventStream.merge(templates, app);
-
-  return javascriptTransform(bundleStream, bundleName).pipe($.changed('dist', changeOptions))
+  return eventStream.merge(templates, app)
+    .pipe($.angularFilesort())
+    .pipe($.sourcemaps.init())
+    .pipe($.concat(bundleName))
+    .pipe($.if(!config.debug, $.ngAnnotate()))
+    .pipe($.if(!config.debug, $.uglify()))
+    .pipe($.if(config.debug,
+      $.sourcemaps.write('.', { sourceRoot: path.join(__dirname, 'src/app') }))
+    )
+    .pipe($.changed('dist', changeOptions))
     .pipe(gulp.dest('dist'));
 });
 
@@ -202,7 +174,7 @@ gulp.task('stylesheets', function() {
   /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
   var app = gulp.src('src/app/styles.scss')
     .pipe($.plumber())
-    .pipe($.if(config.debug, $.sourcemaps.init()))
+    .pipe($.sourcemaps.init())
     .pipe($.sass().on('error', $.sass.logError))
     .pipe($.concat('app.css'));
   /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
@@ -215,10 +187,11 @@ gulp.task('stylesheets', function() {
     .pipe($.concat(bundleName))
     .pipe($.if(!config.debug, $.csso()))
     .pipe($.if(config.debug,
-      $.sourcemaps.write({ sourceRoot: path.join(__dirname, 'src/app') }))
+      $.sourcemaps.write('.', { sourceRoot: path.join(__dirname, 'src/app') }))
     )
     .pipe($.changed('dist/styles', changeOptions))
     .pipe(gulp.dest('dist/styles'))
+    .pipe($.filter(['**/*.css']))
     .pipe($.if(!config.production, $.csslint()))
     .pipe($.if(!config.production, $.csslint.reporter()));
 });
@@ -235,16 +208,15 @@ gulp.task('assets', function() {
 gulp.task('integrate', function() {
   var target = gulp.src('src/index.html');
   var source = gulp.src(['dist/*.js', 'dist/styles/*.css'], { read: false })
-      .pipe($.order([
-        '**/components-*.js',
-        '**/*.js'
-      ]));
+    .pipe($.order([
+      '**/components-*.js',
+      '**/*.js'
+    ]));
   var params = { ignorePath: ['/dist/'], addRootSlash: false };
 
   // Check whether to run tests as part of integration
   return target
     .pipe($.inject(source, params))
-    .pipe($.changed('dist'), changeOptions)
     .pipe(gulp.dest('dist'));
 });
 
