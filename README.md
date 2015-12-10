@@ -96,14 +96,18 @@ The server should respond your http requests on local port 8080.
 
 The resulting web application (contents of dist) can be deployed to an Amazon S3 bucket. You'll need to have
 
-    1. an S3 bucket set up to AWS
+    1. an S3 bucket set up to AWS.
     2. the bucket configured in package.json (config.bucket)
-    3. AWS credentials set up as required by aws-sdk (sample .aws/credentials file below)
+    3. the region for the bucket can be configured in package.json (config.bucketRegion)
+    4. AWS credentials set up as required by aws-sdk (sample .aws/credentials file below)
 
     [default]
     aws_access_key_id=Access key from AWS console
     aws_secret_access_key=Secret key from AWS console
 
+To create the bucket, run:
+    
+    > npm run createBucket
 
 To deploy to S3, run:
 

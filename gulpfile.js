@@ -12,7 +12,13 @@ var bowerFiles = require('main-bower-files'),
     runSequence = require('run-sequence'),
     util = require('util'),
     awspublish = require('gulp-awspublish'),
-    $ = require('gulp-load-plugins')();
+    $ = require('gulp-load-plugins')(),
+    AWS = require('aws-sdk');
+
+var region = pkg.config.bucketRegion || AWS.Config.region || 'eu-west-1';
+AWS.config.region = region;
+
+var s3client = new AWS.S3({});
 
 /* Configurations. Note that most of the configuration is stored in
 the task context. These are mainly for repeating configuration items */
@@ -24,7 +30,8 @@ var config = {
     hostname: process.env.HOSTNAME || pkg.config.hostname,
     debug: Boolean($.util.env.debug) || (process.env.NODE_ENV === 'development'),
     production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production'),
-    bucket: pkg.config.bucket
+    bucket: pkg.config.bucket,
+    bucketRegion: pkg.config.bucketRegion || AWS.Config.region || 'eu-west-1'
   },
   // Test server URL (shared with server.js)
   url = ['http://', config.hostname + ':' + config.port, '/'].join(''),
@@ -207,17 +214,57 @@ gulp.task('watch', ['build'], function() {
     });
 });
 
+gulp.task('createBucket', function() {
+  if (! config.bucket) {
+    $.util.log('ERROR: Bucket not defined')
+    return;
+  }
+  
+  var options = { 
+    Bucket: config.bucket,
+    ACL: 'public-read',
+
+  };
+
+  s3client.createBucket(options, function(err, data) {
+    if (err) {
+      $.util.log('Error : ' +err);
+      return;
+    }
+
+    s3client.putBucketWebsite({
+      Bucket: config.bucket,
+      WebsiteConfiguration: {
+        IndexDocument: {
+          Suffix: 'index.html'
+        },
+        ErrorDocument: {
+          Key: 'error.html'
+        }
+      }
+    }, function(err, data) {
+      $.util.log('Created bucket ' + config.bucket + ' to ' + config.bucketRegion);
+    });
+  })
+});
+
 gulp.task('deploy', function() {
   if (! config.bucket) {
     $.util.log('ERROR: Bucket not defined')
     return;
   }
-  $.util.log('Upload to bucket ' + config.bucket);
-  var publisher = awspublish.create({
-    params: {
-      Bucket: config.bucket
-    }
-  });
+  $.util.log('Upload to bucket ' + config.bucket + ' in ' + config.bucketRegion);
+  $.util.log('URL http://' + config.bucket + '.s3.amazonaws.com/index.html in ' + config.bucketRegion);
+ 
+  var options = { 
+      params: {
+        Bucket: config.bucket
+      },
+      region: config.bucketRegion
+  };
+
+  var publisher = awspublish.create(options);
+  
   var headers = {};
 
   return gulp.src('dist/*')

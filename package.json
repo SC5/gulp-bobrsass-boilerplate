@@ -15,6 +15,7 @@
     "express": "^4.10.7"
   },
   "devDependencies": {
+    "aws-sdk": "^2.2.22",
     "bluebird": "^2.5.3",
     "browser-sync": "^2.7.13",
     "del": "^1.1.1",
@@ -52,7 +53,8 @@
   "config": {
     "port": 8080,
     "hostname": "localhost",
-    "bucket": ""
+    "bucket": "",
+    "bucketRegion": ""
   },
   "scripts": {
     "build": "gulp build",
@@ -60,6 +62,7 @@
     "test": "gulp test",
     "watch": "gulp watch",
     "deploy": "gulp deploy",
+    "createBucket": "gulp createBucket",
     "start": "node server"
   }
 }
