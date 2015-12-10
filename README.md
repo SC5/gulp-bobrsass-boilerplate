@@ -30,7 +30,7 @@ command prompt.
 Clone the project and trigger installation of the project dependencies by
 
     > git clone https://github.com/SC5/gulp-bobrsass-boilerplate.git
-    > npm install
+    > npm install --debug
     > npm run deps
 
 If `deps` fails on Ruby gem dependencies, try updating rubygems as follows:
@@ -90,6 +90,25 @@ the build, but nothing blocks you from expanding it into a full-blown server.
     > node server               # to start the server
 
 The server should respond your http requests on local port 8080.
+
+
+### Deploying to AWS S3
+
+The resulting web application (contents of dist) can be deployed to an Amazon S3 bucket. You'll need to have
+
+    1. an S3 bucket set up to AWS
+    2. the bucket configured in package.json (config.bucket)
+    3. AWS credentials set up as required by aws-sdk (sample .aws/credentials file below)
+
+    [default]
+    aws_access_key_id=Access key from AWS console
+    aws_secret_access_key=Secret key from AWS console
+
+
+To deploy to S3, run:
+
+    > npm run build         # To build the application (to dist/)
+    > npm run deploy        # To deploy to Amazon S3
 
 ### Running with Docker
 
