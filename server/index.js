@@ -1,11 +1,14 @@
 var express = require('express'),
     app = express(),
+    https = require('https'),
+    fs = require('fs'),
     url = require('url'),
     pkg = require('../package.json'),
     config = {
       version: pkg.version,
       port: process.env.PORT || pkg.config.port,
-      hostname: process.env.HOSTNAME || pkg.config.hostname
+      hostname: process.env.HOSTNAME || pkg.config.hostname,
+      https: pkg.config.https || false
     };
 
 // Poor man's rewrite
@@ -24,6 +27,16 @@ app.use(function(req, res, next) {
   next();
 });
 app.use(express.static(__dirname + '/../dist'));
-app.listen(config.port);
 
-console.log('Stub server running on port ' + config.port);
+var proto = 'http';
+if (config.https) {
+  https.createServer({  
+    key: fs.readFileSync('server/key.pem'),
+    cert: fs.readFileSync('server/cert.pem')
+  }, app).listen(config.port);
+  proto='https';
+} else {
+  app.listen(config.port);
+}
+
+console.log('Stub server (' + proto + ') running on port ' + config.port);

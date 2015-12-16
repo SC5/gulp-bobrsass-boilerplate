@@ -41,6 +41,15 @@ set 'NODE_ENV' to something else than 'production' or install the npm
 dependencies with a '--debug' flag. All the development dependencies are moved
 into devDependencies to avoid slow installs of the actual released software.
 
+## Configuring
+
+The following options are configurable in the package.json file (in config):
+
+    port: the port used to start the server
+    hostname: the interface listened by the server
+    bucket [optional] : the S3 bucket used to deploy the application
+    https : set to true to enable https on the server (default http)
+
 ### Debug and Release builds
 
     > npm install --debug       # to force development dependencies

@@ -30,11 +30,12 @@ var config = {
   hostname: process.env.HOSTNAME || pkg.config.hostname,
   debug: Boolean($.util.env.debug) || (process.env.NODE_ENV === 'development'),
   production: Boolean($.util.env.production) || (process.env.NODE_ENV === 'production'),
-  bucket: pkg.config.bucket
+  bucket: pkg.config.bucket,
+  protocol: (pkg.config.https === true) ? 'https' : 'http'
 };
 
 // Test server URL (shared with server.js)
-var url = ['http://', config.hostname + ':' + config.port, '/'].join('');
+var url = [config.protocol + '://', config.hostname + ':' + config.port, '/'].join('');
 
 // Global vars used across the test tasks
 var testServerCmdAndArgs = pkg.scripts.start.split(/\s/);
@@ -56,7 +57,10 @@ var testServer = exec({
     checkHTTPResponse: false
   },
   log: $.util.log,
-  stopSignal: 'SIGTERM'
+  stopSignal: 'SIGTERM',
+  httpOptions: {
+    rejectUnauthorized: false
+  }
 });
 
 // The last test run result
@@ -246,11 +250,21 @@ gulp.task('watch', ['build'], function() {
       gulp.watch(['dist/**/*.js', 'dist/**/*.css'], integrationTasks);
 
       $.util.log('Initialise BrowserSync on port 8081');
-      browserSync.init({
+
+      var options = {
         files: 'dist/**/*',
-        proxy: [config.hostname, config.port].join(':'),
+        proxy: {
+          target: config.protocol + '://' + config.hostname + ':' + config.port
+        },
         port: 8081
-      });
+      };
+      if (config.protocol === 'https') {
+        options.https = {
+          key: 'server/key.pem',
+          cert: 'server/cert.pem'
+        };
+      }
+      browserSync.init(options);
     });
 });
 

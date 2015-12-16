@@ -5,7 +5,7 @@
     "type": "git",
     "url": "https://github.com/SC5/gulp-bobrsass-boilerplate.git"
   },
-  "version": "0.5.0",
+  "version": "0.5.1",
   "engines": {
     "node": ">=0.10.10",
     "npm": ">=1.2.15"
@@ -18,7 +18,7 @@
     "browser-sync": "^2.7.13",
     "del": "^1.1.1",
     "event-stream": "^3.2.1",
-    "exec-wait": "^0.0.3",
+    "exec-wait": "^0.0.5",
     "git-hooks": "1.0.0-rc.1",
     "gulp": "^3.8.10",
     "gulp-awspublish": "^3.0.0",
@@ -58,7 +58,8 @@
   "config": {
     "port": 8080,
     "hostname": "localhost",
-    "bucket": ""
+    "bucket": "",
+    "https": true
   },
   "scripts": {
     "postinstall": "gulp install",
