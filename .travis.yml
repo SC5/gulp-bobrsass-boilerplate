@@ -5,7 +5,6 @@ node_js:
 - '0.10'
 
 before_script:
-  - npm run deps
   - npm run build
 
 env:

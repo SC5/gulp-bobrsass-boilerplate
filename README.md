@@ -4,26 +4,26 @@
 BoBrSASS is a modifiable boilerplate combining some of our common tools and
 practices:
 * Gulp for fast builds
-* Browserify for bundling CommonJS modules
-* Sass & Compass stylesheets
+* Bundling of Angular modules and templates
+* Sass stylesheets
 * Runs in background (watching changes), supports live reload
 * Supports source maps for both JavaScript and Sass
 * Spaces instead of tabs
 * Headless protractor acceptance tests
+* Headless karma unit tests
 
 ## Installation
 
 ### Prerequisites
 
-The latest version of BoBrSASS should work with recent versions of Ruby, Sass,
-Compass and Git. Please check the correct versions, maintained in our
+The latest version of BoBrSASS should work with recent versions of Sass and Git. 
+Please check the correct versions, maintained in our
 [Travis configuration](https://github.com/SC5/gulp-bobrsass-boilerplate/blob/master/.travis.yml).
 If you insist on using an older version of dependencies, earlier versions of
 the boilerplate may work.
 
 For system level deps, install [Node.js](http://www.nodejs.org/) 0.10 or
-later and [Ruby](https://www.ruby-lang.org/en/downloads/) 2.1 or later and
-[Git](http://git-scm.com/). When using
+later and [Git](http://git-scm.com/). When using
 [Git on Windows](http://msysgit.github.io/), remember to enable usage from
 command prompt.
 
@@ -31,11 +31,7 @@ Clone the project and trigger installation of the project dependencies by
 
     > git clone https://github.com/SC5/gulp-bobrsass-boilerplate.git
     > npm install
-    > npm run deps
 
-If `deps` fails on Ruby gem dependencies, try updating rubygems as follows:
-
-    > gem update --system
 
 ## Building
 

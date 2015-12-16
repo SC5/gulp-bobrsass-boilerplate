@@ -2,6 +2,7 @@
 
 'use strict';
 
+var fs = require('fs');
 var $ = require('gulp-load-plugins')();
 var bowerFiles = require('main-bower-files');
 var browserSync = require('browser-sync');
@@ -11,10 +12,10 @@ var exec = require('exec-wait');
 var gulp = require('gulp');
 var path = require('path');
 var pkg = require('./package.json');
-var Promise = require('bluebird');
 var awspublish = require('gulp-awspublish');
 var runSequence = require('run-sequence');
 var util = require('util');
+var karma = require('karma');
 
 /*
 Configuration.
@@ -60,6 +61,7 @@ var testServer = exec({
 
 // The last test run result
 var lastTestRunPassed = true;
+var lastUnitTestRunPassed = true;
 
 // Options for gulp-changed to track file changes
 var changeOptions = { hasChanged: $.changed.compareSha1Digest };
@@ -96,52 +98,64 @@ gulp.task('bump', function() {
 
 /* JSCS linting */
 gulp.task('jscs', function() {
-  return gulp.src(['*.js', 'src/app/**/*.js', 'tests/**/*.js'])
+  return gulp.src(['*.js', 'src/app/**/*.js'])
     .pipe($.plumber())
     .pipe($.jscs('.jscsrc'));
 });
 
 /* JSHint style checking */
 gulp.task('jshint', function() {
-  return gulp.src(['*.js', 'src/app/**/*.js', 'tests/**/*.js'])
+  return gulp.src(['*.js', 'src/app/**/*.js'])
     .pipe($.jshint())
     .pipe($.jshint.reporter('default'));
 });
 
 /* Process javascript */
-gulp.task('javascript', function() {
+gulp.task('javascript', [
+  'javascript-app',
+  'javascript-components'
+]);
+
+
+gulp.task('javascript-app', function() {
   // The non-MD5fied prefix, so that we know which version we are actually
   // referring to in case of fixing bugs
   var bundleName = util.format('bundle-%s.js', config.version);
 
-  // Note: two pipes get combined together by first
-  // combining components into one bundle, then adding
-  // app sources, and reordering the items. Note that
-  // we expect Angular to be the first item in bower.json
-  // so that component concatenation works
-  var components = gulp.src(bowerFiles())
-    .pipe($.filter('**/*.js'))
-    .pipe($.plumber());
-
   var templates = gulp.src(['src/app/**/*.html', '!src/index.html'])
-    .pipe($.angularTemplatecache('templates.js', { standalone: true }));
+      .pipe($.angularTemplatecache('templates.js', { standalone: true }));
 
-  var app = gulp.src('src/app/**/*.js');
+  var app = gulp.src(['src/app/**/*.js', '!src/app/**/*.test.js', '!src/app/**/*.spec.js']);
 
-  return eventStream.merge(components, templates, app)
-    .pipe($.order([
-      'components/angular/angular.js',
-      'components/**/*.js',
-      'templates.js',
-      'app/**/*.js'
-    ], { base: path.join(__dirname, 'src') }))
-    .pipe($.if(config.debug, $.sourcemaps.init()))
+  return eventStream.merge(templates, app)
+    .pipe($.angularFilesort())
+    .pipe($.sourcemaps.init())
     .pipe($.concat(bundleName))
     .pipe($.if(!config.debug, $.ngAnnotate()))
     .pipe($.if(!config.debug, $.uglify()))
-    .pipe($.if(config.debug, $.sourcemaps.write()))
+    .pipe($.if(config.debug,
+      $.sourcemaps.write('.', { sourceRoot: path.join(__dirname, 'src/app') }))
+    )
     .pipe($.changed('dist', changeOptions))
     .pipe(gulp.dest('dist'));
+});
+
+gulp.task('javascript-components', function() {
+  // The non-MD5fied prefix, so that we know which version we are actually
+  // referring to in case of fixing bugs
+  var bundleName = util.format('components-%s.js', config.version);
+
+  return gulp.src(bowerFiles())
+      .pipe($.filter('**/*.js'))
+      .pipe($.plumber())
+      .pipe($.order([
+        'components/**/jquery*.js',
+        'components/angular/angular.js',
+        'components/**/*.js'
+      ], { base: path.join(__dirname, 'src') }))
+      .pipe($.concat(bundleName))
+      .pipe($.changed('dist', changeOptions))
+      .pipe(gulp.dest('dist'));
 });
 
 /* Process stylesheets */
@@ -160,13 +174,8 @@ gulp.task('stylesheets', function() {
   /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
   var app = gulp.src('src/app/styles.scss')
     .pipe($.plumber())
-    .pipe($.if(config.debug, $.sourcemaps.init()))
-    .pipe($.compass({
-      project: __dirname,
-      sass: 'src/app',
-      css: 'temp/styles',
-      bundle_exec: true
-    }))
+    .pipe($.sourcemaps.init())
+    .pipe($.sass().on('error', $.sass.logError))
     .pipe($.concat('app.css'));
   /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
 
@@ -178,10 +187,11 @@ gulp.task('stylesheets', function() {
     .pipe($.concat(bundleName))
     .pipe($.if(!config.debug, $.csso()))
     .pipe($.if(config.debug,
-      $.sourcemaps.write({ sourceRoot: path.join(__dirname, 'src/styles') }))
+      $.sourcemaps.write('.', { sourceRoot: path.join(__dirname, 'src/app') }))
     )
     .pipe($.changed('dist/styles', changeOptions))
     .pipe(gulp.dest('dist/styles'))
+    .pipe($.filter(['**/*.css']))
     .pipe($.if(!config.production, $.csslint()))
     .pipe($.if(!config.production, $.csslint.reporter()));
 });
@@ -197,13 +207,16 @@ gulp.task('assets', function() {
 /* Integration test */
 gulp.task('integrate', function() {
   var target = gulp.src('src/index.html');
-  var source = gulp.src(['dist/*.js', 'dist/styles/*.css'], { read: false });
+  var source = gulp.src(['dist/*.js', 'dist/styles/*.css'], { read: false })
+    .pipe($.order([
+      '**/components-*.js',
+      '**/*.js'
+    ]));
   var params = { ignorePath: ['/dist/'], addRootSlash: false };
 
   // Check whether to run tests as part of integration
   return target
     .pipe($.inject(source, params))
-    .pipe($.changed('dist'), changeOptions)
     .pipe(gulp.dest('dist'));
 });
 
@@ -220,11 +233,12 @@ gulp.task('watch', ['build'], function() {
     })
     .then(function() {
       var integrationTasks = ['integrate'].concat((testOnWatch) ? ['test-run'] : []);
-      var jsTasks = (lintOnWatch ? ['jshint', 'jscs'] : []).concat(['javascript']);
+      var jsTasks = (lintOnWatch ? ['jshint', 'jscs'] : []).concat(['javascript-app']);
 
       // Compose several watch streams, each resulting in their own pipe
       gulp.watch('src/app/**/*.scss', ['stylesheets']);
       gulp.watch(['src/app/**/*.js', 'src/app/**/*.html'], jsTasks);
+      gulp.watch(['src/components/**/*.js'], ['javascript-components']);
       gulp.watch(['src/assets/**'], ['assets']);
       gulp.watch(['src/index.html'], ['integrate']);
 
@@ -276,17 +290,14 @@ gulp.task('test-setup', function() {
             process.exit();
           });
       });
-
-      return Promise.resolve();
     });
 });
 
-gulp.task('test-run', function() {
+gulp.task('test-run-protractor', function(done) {
   $.util.log('Running protractor');
   lastTestRunPassed = true;
 
-  return new Promise(function(resolve) {
-    gulp.src(['tests/*.js'])
+  gulp.src(['src/app/**/*.test.js'])
     .pipe($.plumber())
     .pipe($.protractor.protractor({
       configFile: 'protractor.config.js',
@@ -294,16 +305,15 @@ gulp.task('test-run', function() {
              '--baseUrl', url]
     }))
     .on('end', function() {
-      resolve();
+      done();
     })
     .on('error', function() {
       // Keep the last test run result to be able to exit with proper
       // non-zero return code after setup-run-teardown-sequence has
       // completed.
       lastTestRunPassed = false;
-      resolve();
+      done();
     });
-  });
 });
 
 gulp.task('test-teardown', function() {
@@ -313,18 +323,35 @@ gulp.task('test-teardown', function() {
 
 // Sole purpose of this task is to exit with non-zero return code if
 // last test-run did not pass.
-gulp.task('test-retcode', function() {
-  return new Promise(function(resolve) {
-    if (!lastTestRunPassed) {
-      process.exit(1);
-    }
+gulp.task('test-retcode', function(done) {
+  if (!lastTestRunPassed || !lastUnitTestRunPassed) {
+    process.exit(1);
+  }
 
-    resolve();
+  done();
+});
+
+gulp.task('test-protractor', function(done) {
+  return runSequence('test-setup', 'test-run-protractor', 'test-teardown', done);
+});
+
+gulp.task('test-run-karma', function(done) {
+  $.util.log('Running karma');
+
+  lastUnitTestRunPassed = true;
+  karma.server.start({
+    configFile: path.join(__dirname, 'karma.conf.js'),
+    singleRun: true
+  }, function(errorCode) {
+    lastUnitTestRunPassed = !errorCode;
+    done();
   });
 });
 
-gulp.task('test', function(done) {
-  return runSequence('test-setup', 'test-run', 'test-teardown', 'test-retcode', done);
+gulp.task('test-run', ['test-run-protractor', 'test-run-karma']);
+
+gulp.task('test', function() {
+  runSequence('test-run-karma', 'test-protractor', 'test-retcode');
 });
 
 // Task combinations

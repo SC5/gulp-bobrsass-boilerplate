@@ -1,25 +1,26 @@
 <!DOCTYPE HTML>
-<html ng-app="SC5AngularBoilerplate">
-<head>
-  <meta charset="utf-8" />
-  <title>SC5 Angular Boilerplate</title>
-  <!-- inject:css -->
-  <!-- endinject -->
-  <!-- inject:js -->
-  <!-- endinject -->
-</head>
-<body ng-controller="MainController">
-  <header>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>SC5 Angular Boilerplate</title>
+
     <base href="/">
-    <a ui-sref="main">Main</a>
-    <a ui-sref="sample">Sample</a>
-  </header>
-  <h1>BoBrSASS Angular Test Page</h1>
-  <div id="status" ui-view>
-    <p>If you see this, something is wrong with your installation.</p>
-  </div>
-  <footer>
-    <p>Copyright 2015 SC5 Online</p>
-  </footer>
-</body>
+
+    <!-- inject:css -->
+    <!-- endinject -->
+    <!-- inject:js -->
+    <!-- endinject -->
+  </head>
+
+  <body ng-cloak>
+    <header app-header></header>
+
+    <h1>BoBrSASS Test Page</h1>
+
+    <div id="page" ui-view>
+      <p>If you see this, something is wrong with your installation.</p>
+    </div>
+
+    <footer app-footer></footer>
+  </body>
 </html>
